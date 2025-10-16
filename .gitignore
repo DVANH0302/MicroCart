@@ -1,0 +1,59 @@
+# ============ Global Ignores ============
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+*.iml
+
+# Build tools
+target/
+build/
+out/
+dist/
+bin/
+.gradle/
+.mvn/
+
+# Node / npm (if any frontend parts)
+node_modules/
+npm-debug.log
+
+# Environment / Secrets
+.env
+*.env
+*.key
+*.pem
+
+# Logs
+*.log
+logs/
+*.pid
+
+# Compiled / Temporary Files
+*.class
+*.jar
+*.war
+*.ear
+*.pyc
+__pycache__/
+*.tmp
+
+# Docker
+**/tmp/
+**/.env.local
+**/.env.dev
+**/.env.prod
+**/.env.test
+
+# IntelliJ / Gradle cache
+.gradle/
+.idea/
+*.ipr
+*.iws
+*.swp
+*.swo
+
+# Others
+*.bak
+*.swp
+Thumbs.db
