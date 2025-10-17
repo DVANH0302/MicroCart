@@ -2,7 +2,7 @@ package com.example.deliveryco.messaging;
 
 
 import com.example.deliveryco.config.RabbitMQConfig;
-import com.example.deliveryco.dto.DeliveryRequest;
+import com.example.deliveryco.dto.request.DeliveryRequest;
 import com.example.deliveryco.service.DeliveryService;
 import com.rabbitmq.client.Channel;
 import lombok.extern.slf4j.Slf4j;
@@ -32,5 +32,7 @@ public class DeliveryConsumer {
             throw new RuntimeException(e);
         }
     }
+
+
 
 }
