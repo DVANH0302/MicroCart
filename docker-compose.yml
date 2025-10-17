@@ -104,7 +104,7 @@ services:
       SPRING_RABBITMQ_PORT: 5672
       SPRING_RABBITMQ_PASSWORD: guest
       SPRING_RABBITMQ_USERNAME: guest
-      SPRING_DATASOURCE_URL: jdbc:postgresql://deliveryco-db:5434/deliverydb
+      SPRING_DATASOURCE_URL: jdbc:postgresql://deliveryco-db:5432/deliverydb
       SPRING_DATASOURCE_USERNAME: deliveryuser
       SPRING_DATASOURCE_PASSWORD: deliverypass
       SPRING_JPA_HIBERNATE_DDL_AUTO: update

@@ -11,18 +11,22 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class RabbitMQConfig {
+
+
+
     //  QUEUE
     public static final String DELIVERY_REQUEST_QUEUE = "delivery_request_queue";
     public static final String DELIVERY_UPDATE_QUEUE = "delivery_update_queue";
-    public static final String EMAIL_QUEUE = "email_queue";
+    public static final String STORE_DELIVERY_EVENT_QUEUE = "store_delivery_event_queue";
 
     // EXCHANGE
     public static final String STORE_EXCHANGE = "store_exchange";
 
     // ROUTING KEYS
-    public static final String DELIVERY_REQUEST_KEY = "delivery_request_key";
-    public static final String DELIVERY_UPDATE_KEY = "delivery_update_key";
-    public static final String EMAIL_KEY = "email_key";
+    public static final String DELIVERY_REQUEST_KEY = "delivery.request";
+    public static final String DELIVERY_UPDATE_KEY = "delivery.update";
+    public static final String DELIVERY_REQUEST_REJECT_KEY  = "delivery.reject";
+
 
     // store exchange
     @Bean
@@ -57,6 +61,20 @@ public class RabbitMQConfig {
                 .bind(deliveryUpdateQueue)
                 .to(storeExchange)
                 .with(DELIVERY_UPDATE_KEY);
+    }
+
+    // Queue 3 - store delivery event, durable, deliveryco send failed business logic message to store
+    @Bean
+    public Queue storeDeliveryEventQueue() {
+        return QueueBuilder.durable(STORE_DELIVERY_EVENT_QUEUE).build();
+    }
+
+    @Bean
+    public Binding deliveryRejectBinding(Queue storeDeliveryEventQueue, TopicExchange storeExchange) {
+        return BindingBuilder
+                .bind(storeDeliveryEventQueue)
+                .to(storeExchange)
+                .with(DELIVERY_REQUEST_REJECT_KEY);
     }
 
 
