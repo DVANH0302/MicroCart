@@ -9,9 +9,10 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 public class DeliveryRequest {
-    private String orderId;
-    private String userId;
-    private String productId;
+    private int orderId;
+    private String userFullName;
+    private String userEmail;
+    private String address;
     private Integer quantity;
-    private List<String> warehouseIds;
+    private List<Integer> warehouseIds;
 }

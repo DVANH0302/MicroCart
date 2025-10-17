@@ -9,10 +9,10 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
-public class DeliveryService {
+public class StoreService {
     private final RabbitTemplate rabbitTemplate;
 
-    public DeliveryService(RabbitTemplate rabbitTemplate) {
+    public StoreService(RabbitTemplate rabbitTemplate) {
         this.rabbitTemplate = rabbitTemplate;
     }
 
@@ -27,5 +27,10 @@ public class DeliveryService {
             log.error("deliveryRequest={}", deliveryRequest, e.getMessage());
             throw new RuntimeException("Failed to deliver delivery request");
         }
+    }
+
+    public void handleAreadyExist(Integer orderId) {
+        log.info("TODO:  handleAreadyExist={}", orderId);
+        log.info("TODO: SET ORDER STATUS FAILED");
     }
 }
