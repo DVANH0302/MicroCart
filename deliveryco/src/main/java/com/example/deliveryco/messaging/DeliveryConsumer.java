@@ -27,9 +27,10 @@ public class DeliveryConsumer {
             DeliveryRequest deliveryRequest
     ) {
         try {
-            if (true) {
-                throw new RuntimeException("TESTING DLQ");
-            }
+////            FOR DLQ TESTING DEMO
+//            if (true) {
+//                throw new RuntimeException("TESTING DLQ");
+//            }
             log.info("PROCESSING DELIVERY REQUEST {}",  deliveryRequest);
             deliveryService.processDelivery(deliveryRequest);
 
