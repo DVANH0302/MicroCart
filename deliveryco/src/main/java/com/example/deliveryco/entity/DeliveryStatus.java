@@ -1,9 +1,11 @@
 package com.example.deliveryco.entity;
 
+
 public enum DeliveryStatus {
-    REQUESTED,
+    RECIEVED,
     PICKED_UP,
     ON_DELIVERY,
     DELIVERED,
     LOST,
+    CANCELLED
 }

@@ -12,4 +12,5 @@ public class DeliveryUpdate {
     private int orderId;
     private DeliveryStatus status;
     private LocalDateTime timeStamp;
+    private String message;
 }

@@ -1,44 +1,32 @@
 package com.example.deliveryco.messaging;
 
-
 import com.example.deliveryco.config.RabbitMQConfig;
 import com.example.deliveryco.dto.request.DeliveryRequest;
 import com.example.deliveryco.service.DeliveryService;
-import com.rabbitmq.client.Channel;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
-import org.springframework.amqp.support.AmqpHeaders;
-import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
-
-import java.io.IOException;
 
 @Component
 @Slf4j
-public class DeliveryConsumer {
+@ConditionalOnProperty(name = "delivery.request.dlq.enabled", havingValue = "true")
+public class DeliveryRequestDlqConsumer {
     private final DeliveryService deliveryService;
 
-    public DeliveryConsumer(DeliveryService deliveryService) {
+    public DeliveryRequestDlqConsumer(DeliveryService deliveryService) {
         this.deliveryService = deliveryService;
     }
 
-    @RabbitListener(queues = RabbitMQConfig.DELIVERY_REQUEST_QUEUE)
-    public void handleDeliveryRequest(
-            DeliveryRequest deliveryRequest
-    ) {
-        try {
-            if (true) {
-                throw new RuntimeException("TESTING DLQ");
-            }
+    @RabbitListener(queues = RabbitMQConfig.DELIVERY_REQUEST_DLQ)
+    public void handleDeliveryRequestDlq(DeliveryRequest deliveryRequest) {
+        try{
             log.info("PROCESSING DELIVERY REQUEST {}",  deliveryRequest);
             deliveryService.processDelivery(deliveryRequest);
-
         } catch (RuntimeException e) {
-            log.error("Error processing delivery request order {}", deliveryRequest.getOrderId());
             throw new RuntimeException(e);
         }
     }
-
-
 
 }
