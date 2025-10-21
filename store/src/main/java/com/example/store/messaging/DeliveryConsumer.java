@@ -23,6 +23,10 @@ public class DeliveryConsumer {
 
     ) {
         try {
+//            // TESTING DLQ PURPOSE
+//            if (true){
+//                throw new RuntimeException("TEST FOR DLQ");
+//            }
             log.info("TODO: UPDATE ORDER STATUS IN DB");
             log.info("TODO: SEND EMAIL");
             deliveryService.handleUpdate(deliveryUpdate);
