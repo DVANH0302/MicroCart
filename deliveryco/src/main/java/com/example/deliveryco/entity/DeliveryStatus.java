@@ -2,7 +2,7 @@ package com.example.deliveryco.entity;
 
 
 public enum DeliveryStatus {
-    RECIEVED,
+    RECEIVED,
     PICKED_UP,
     ON_DELIVERY,
     DELIVERED,

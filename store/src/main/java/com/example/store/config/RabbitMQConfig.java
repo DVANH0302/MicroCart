@@ -156,7 +156,7 @@ public class RabbitMQConfig {
     // helper
     public static String getStatusKey(DeliveryStatus status) {
         String key = switch (status) {
-            case RECIEVED  -> DELIVERY_UPDATE_RECIEVED;
+            case RECEIVED -> DELIVERY_UPDATE_RECIEVED;
             case PICKED_UP -> DELIVERY_UPDATE_PICKEDUP;
             case ON_DELIVERY -> DELIVERY_UPDATE_ON_DELIVERY;
             case LOST  -> DELIVERY_UPDATE_LOST;
@@ -168,7 +168,7 @@ public class RabbitMQConfig {
 
     public static String getStatusMessage(DeliveryStatus status) {
         String message = switch (status) {
-            case RECIEVED  -> "Your delivery order has been RECIEVED!";
+            case RECEIVED -> "Your delivery order has been RECIEVED!";
             case PICKED_UP ->  "Your delivery order has been PICKED_UP!";
             case ON_DELIVERY -> "Your delivery order has been ON_DELIVERY!";
             case LOST  -> "Your delivery order has been LOST!";

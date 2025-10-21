@@ -1,7 +1,7 @@
 package com.example.store.entity;
 
 public enum DeliveryStatus {
-    RECIEVED,
+    RECEIVED,
     PICKED_UP,
     ON_DELIVERY,
     DELIVERED,
