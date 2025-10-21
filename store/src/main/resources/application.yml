@@ -8,6 +8,17 @@ spring:
     username: guest
     password: guest
 
+    listener:
+      simple:
+        acknowledge-mode: auto
+        default-requeue-rejected: false
+        prefetch: 5
+        retry:
+          enabled: true
+          max-attempts: 3
+          initial-interval: 2000ms
+          multiplier: 2.0
+          max-interval: 5s
   datasource:
     url: jdbc:postgresql://localhost:5433/storedb
     username: storeuser
@@ -29,3 +40,8 @@ server:
 logging:
   level:
     org.springframework.amqp: DEBUG
+
+delivery:
+  dlq:
+    consumer:
+      enabled: true

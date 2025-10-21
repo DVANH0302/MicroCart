@@ -3,36 +3,33 @@ package com.example.store.messaging;
 import com.example.store.config.RabbitMQConfig;
 import com.example.store.dto.response.DeliveryUpdate;
 import com.example.store.service.DeliveryService;
-import com.example.store.service.impl.DeliveryServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
+
 
 @Component
 @Slf4j
-public class DeliveryConsumer {
+@ConditionalOnProperty(name = "delivery.dlq.consumer.enabled", havingValue = "true")
+public class DeliveryDlqConsumer {
     private final DeliveryService deliveryService;
-
-    public DeliveryConsumer(DeliveryService deliveryService) {
+    public DeliveryDlqConsumer(DeliveryService deliveryService) {
         this.deliveryService = deliveryService;
     }
 
-    @RabbitListener(queues = RabbitMQConfig.DELIVERY_UPDATE_QUEUE)
-    public void handleDeliveryUpdate(
-        DeliveryUpdate deliveryUpdate
-
+    @RabbitListener(queues = RabbitMQConfig.DELIVERY_UPDATE_DLQ)
+    public void handleDlqMessage(
+            DeliveryUpdate deliveryUpdate
     ) {
         try {
-//            // TESTING DLQ PURPOSE
-//            if (true){
-//                throw new RuntimeException("TEST FOR DLQ");
-//            }
-            log.info("TODO: UPDATE ORDER STATUS IN DB");
-            log.info("TODO: SEND EMAIL");
+            log.info("PROCESSING DLQ Message from queue: {}", deliveryUpdate);
             deliveryService.handleUpdate(deliveryUpdate);
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
+            log.error("Failed to handle DLQ message", e);
             throw new RuntimeException(e);
         }
     }
+
 
 }
