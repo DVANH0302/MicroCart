@@ -1,18 +1,11 @@
 package com.example.deliveryco.messaging;
 
-
 import com.example.deliveryco.config.RabbitMQConfig;
 import com.example.deliveryco.dto.request.DeliveryRequest;
 import com.example.deliveryco.service.DeliveryService;
-import com.rabbitmq.client.Channel;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
-import org.springframework.amqp.support.AmqpHeaders;
-import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
-
-import java.io.IOException;
-
 @Component
 @Slf4j
 public class DeliveryConsumer {
