@@ -17,7 +17,7 @@ public class StoreService {
     }
 
     public void requestDelivery(DeliveryRequest deliveryRequest) {
-        log.info("deliveryRequest={}", deliveryRequest);
+        log.info("SENDING deliveryRequest={}", deliveryRequest);
         try {
             rabbitTemplate.convertAndSend(
                     RabbitMQConfig.STORE_EXCHANGE,
@@ -27,10 +27,5 @@ public class StoreService {
             log.error("deliveryRequest={}", deliveryRequest, e.getMessage());
             throw new RuntimeException("Failed to deliver delivery request");
         }
-    }
-
-    public void handleAreadyExist(Integer orderId) {
-        log.info("TODO:  handleAreadyExist={}", orderId);
-        log.info("TODO: SET ORDER STATUS FAILED");
     }
 }
