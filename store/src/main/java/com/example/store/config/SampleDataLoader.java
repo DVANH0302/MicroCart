@@ -76,6 +76,35 @@ public class SampleDataLoader implements CommandLineRunner{
             SET quantity = EXCLUDED.quantity
         """);
 
+
+        // insert one user
+        jdbc.update("""
+            INSERT INTO store.users(user_id, username, password_hash, email, first_name, last_name, bank_account_id)
+            VALUES (1, 'andy', 'lfadjlsjldj', 'andy@gmail.com', 'Andy', 'Doan', 'fjlksadf')
+            ON CONFLICT (user_id) DO UPDATE
+            SET username = EXCLUDED.username,
+                password_hash = EXCLUDED.password_hash,
+                email = EXCLUDED.email,
+                first_name = EXCLUDED.first_name,
+                last_name = EXCLUDED.last_name,
+                bank_account_id = EXCLUDED.bank_account_id
+        """);
+
+        // insert one order
+        jdbc.update("""
+            INSERT INTO store.orders(user_id, product_id, quantity, total_amount, status, bank_transaction_id, warehouse_ids)
+            VALUES (1, 1001, 10, 1000.00, 'PENDING', 'fjlksadf', '1,2,3')
+            ON CONFLICT (order_id) DO UPDATE
+            SET user_id = EXCLUDED.user_id,
+                product_id = EXCLUDED.product_id,
+                quantity = EXCLUDED.quantity,
+                total_amount = EXCLUDED.total_amount,
+                status = EXCLUDED.status,
+                bank_transaction_id = EXCLUDED.bank_transaction_id,
+                warehouse_ids = EXCLUDED.warehouse_ids,
+                updated_at = CURRENT_TIMESTAMP
+            """);
+
         log.info("SampleDataLoader finished. Seed stock reset to: 1001 => (1:50, 2:30), 1002 => (1:20, 2:60)");
     }
 }
