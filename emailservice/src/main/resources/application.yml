@@ -1,0 +1,37 @@
+spring:
+  application:
+    name: emailservice
+  datasource:
+    url: jdbc:postgresql://localhost:5435/emaildb
+    username: emailuser
+    password: emailpass
+  jpa:
+    properties:
+      hibernate:
+        jdbc:
+          lob:
+            non_contextual_creation: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
+    listener:
+      simple:
+        acknowledge-mode: auto
+        default-requeue-rejected: false
+        prefetch: 5
+        retry:
+          enabled: true
+          max-attempts: 3
+          initial-interval: 2000ms
+          multiplier: 2.0
+          max-interval: 5s
+
+
+server:
+  port: 8081
