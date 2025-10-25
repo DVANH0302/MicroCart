@@ -56,15 +56,7 @@ services:
       SPRING_RABBITMQ_PORT: 5672
       SPRING_RABBITMQ_PASSWORD: guest
       SPRING_RABBITMQ_USERNAME: guest
-      SPRING_RABBITMQ_LISTENER_SIMPLE_ACKNOWLEDGE_MODE: auto
-      SPRING_RABBITMQ_LISTENER_SIMPLE_DEFAULT_REQUEUE_REJECTED: false
-      SPRING_RABBITMQ_LISTENER_SIMPLE_PREFETCH: 5
-      SPRING_RABBITMQ_LISTENER_SIMPLE_RETRY_ENABLE: true
-      SPRING_RABBITMQ_LISTENER_SIMPLE_RETRY_MAX_ATTEMPTS: 3
-      SPRING_RABBITMQ_LISTENER_SIMPLE_RETRY_INITIAL_INTERVAL: 1000ms
-      SPRING_RABBITMQ_LISTENER_SIMPLE_RETRY_MULTIPLIER: 2.0
-      SPRING_RABBITMQ_LISTENER_SIMPLE_RETRY_MAX_INTERVAL: 5
-      DELIVERY_DLQ_CONSUMER_ENABLED: true
+
       #Database
       SPRING_DATASOURCE_URL: jdbc:postgresql://store-db:5432/storedb
       SPRING_DATASOURCE_USERNAME: storeuser
@@ -98,7 +90,7 @@ services:
       - store-network
     volumes:
       - pgdata-deliveryco:/var/lib/postgresql/data
-      - ./sql-init/init-deliveryco.sql:/docker-entrypoint-initdb.d/01-init-store.sql
+      - ./sql-init/init-deliveryco.sql:/docker-entrypoint-initdb.d/01-init-deliveryco.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U deliveryuser -d deliverydb"]
       interval: 5s
@@ -116,15 +108,7 @@ services:
       SPRING_RABBITMQ_PORT: 5672
       SPRING_RABBITMQ_PASSWORD: guest
       SPRING_RABBITMQ_USERNAME: guest
-      SPRING_RABBITMQ_LISTENER_SIMPLE_ACKNOWLEDGE_MODE: auto
-      SPRING_RABBITMQ_LISTENER_SIMPLE_DEFAULT_REQUEUE_REJECTED: false
-      SPRING_RABBITMQ_LISTENER_SIMPLE_PREFETCH: 5
-      SPRING_RABBITMQ_LISTENER_SIMPLE_RETRY_ENABLE: true
-      SPRING_RABBITMQ_LISTENER_SIMPLE_RETRY_MAX_ATTEMPTS: 3
-      SPRING_RABBITMQ_LISTENER_SIMPLE_RETRY_INITIAL_INTERVAL: 1000ms
-      SPRING_RABBITMQ_LISTENER_SIMPLE_RETRY_MULTIPLIER: 2.0
-      SPRING_RABBITMQ_LISTENER_SIMPLE_RETRY_MAX_INTERVAL: 5
-      DELIVERY_REQUEST_DLQ_ENABLED: true
+
       #database
       SPRING_DATASOURCE_URL: jdbc:postgresql://deliveryco-db:5432/deliverydb
       SPRING_DATASOURCE_USERNAME: deliveryuser
@@ -139,6 +123,56 @@ services:
     networks:
       - store-network
 
+#
+#  EMAIL RELATED SERVICES
+#
+  email-app:
+    build: ./emailservice
+    container_name: email-app
+    ports:
+      - "8081:8081"
+    environment:
+      #rabbitmq
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_PASSWORD: guest
+      SPRING_RABBITMQ_USERNAME: guest
+
+      #database
+      SPRING_DATASOURCE_URL: jdbc:postgresql://email-db:5432/emaildb
+      SPRING_DATASOURCE_USERNAME: emailuser
+      SPRING_DATASOURCE_PASSWORD: emailpass
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SERVER_PORT: 8081
+    depends_on:
+      email-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - store-network
+
+  email-db:
+    image: postgres:16
+    container_name: email-postgres
+    restart: unless-stopped
+    ports:
+      - "5435:5432"
+    environment:
+      POSTGRES_DB: emaildb
+      POSTGRES_USER: emailuser
+      POSTGRES_PASSWORD: emailpass
+    networks:
+      - store-network
+    volumes:
+      - pgdata-email:/var/lib/postgresql/data
+      - ./sql-init/init-email.sql:/docker-entrypoint-initdb.d/01-init-email.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U deliveryuser -d deliverydb"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
 
 networks:
   store-network:
@@ -147,3 +181,4 @@ volumes:
   rabbitmqdata:
   pgdata-store:
   pgdata-deliveryco:
+  pgdata-email:
