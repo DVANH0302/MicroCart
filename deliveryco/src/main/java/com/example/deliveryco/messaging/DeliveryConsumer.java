@@ -28,8 +28,8 @@ public class DeliveryConsumer {
             deliveryService.processDelivery(deliveryRequest);
 
         } catch (RuntimeException e) {
-            log.error("Error processing delivery request order {}", deliveryRequest.getOrderId());
-            throw new RuntimeException(e);
+            log.error("Error processing delivery request order {}", deliveryRequest.getOrderId(), e);
+            throw e;
         }
     }
 

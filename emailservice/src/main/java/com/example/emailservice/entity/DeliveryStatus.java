@@ -1,5 +1,4 @@
-package com.example.deliveryco.entity;
-
+package com.example.emailservice.entity;
 
 public enum DeliveryStatus {
     RECEIVED,

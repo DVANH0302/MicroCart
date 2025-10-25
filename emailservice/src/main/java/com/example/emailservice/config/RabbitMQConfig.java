@@ -1,9 +1,7 @@
-package com.example.store.config;
+package com.example.emailservice.config;
 
 
-import com.example.store.entity.DeliveryStatus;
-import com.example.store.messaging.CustomCorrelationData;
-import com.example.store.service.EmailService;
+import com.example.emailservice.entity.DeliveryStatus;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -24,7 +22,6 @@ public class RabbitMQConfig {
     public static final String DELIVERY_UPDATE_DLQ =  "delivery_update_dlq";
     public static final String EMAIL_QUEUE = "email_queue";
     public static final String DELIVERY_REQUEST_DLQ = "delivery_request_dlq";
-    public static final String DELIVERY_ALERT_QUEUE = "delivery_alert_queue";
 
     // EXCHANGE
     public static final String STORE_EXCHANGE = "store_exchange";
@@ -44,7 +41,6 @@ public class RabbitMQConfig {
     public static final String DELIVERY_UPDATE_ON_DELIVERY = "delivery.update.ondelivery";
     public static final String DELIVERY_UPDATE_LOST = "delivery.update.lost";
     public static final String DELIVERY_UPDATE_DELIVERED = "delivery.update.delivered";
-
 
     // store exchange and update_dlq exchange
     @Bean
@@ -155,24 +151,6 @@ public class RabbitMQConfig {
     public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
         RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
         rabbitTemplate.setMessageConverter(jsonMessageConverter());
-
-        rabbitTemplate.setConfirmCallback((correlationData, ack, cause) -> {
-            if (ack) {
-                log.info("GLOBAL: RabbitMQ ACK received {}",  correlationData.getId());
-                return;
-            }
-            // nack by queue type
-            if (correlationData instanceof CustomCorrelationData) {
-                CustomCorrelationData data = (CustomCorrelationData) correlationData;
-                log.error("GLOBAL: MESSAGE FAILURE CONFIRMED from message queue from order {}", data.toString());
-            }
-
-        });
-
-        rabbitTemplate.setReturnsCallback( returnedMessage -> log.error("Returned {}", returnedMessage.getMessage()));
-
-        rabbitTemplate.setMandatory(true);
-
         return rabbitTemplate;
     }
     // helper

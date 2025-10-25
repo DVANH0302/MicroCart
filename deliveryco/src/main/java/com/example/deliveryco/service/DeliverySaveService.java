@@ -25,7 +25,7 @@ public class DeliverySaveService {
                 .customerEmail(deliveryRequest.getUserEmail())
                 .address(deliveryRequest.getAddress())
                 .warehouseIds(deliveryRequest.getWarehouseIds())
-                .status(DeliveryStatus.RECIEVED.name())
+                .status(DeliveryStatus.RECEIVED.name())
                 .build();
 
         Delivery savedDelivery =  deliveryRepository.save(delivery);

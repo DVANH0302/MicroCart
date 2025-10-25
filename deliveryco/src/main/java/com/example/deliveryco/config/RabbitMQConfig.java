@@ -2,6 +2,7 @@ package com.example.deliveryco.config;
 
 
 import com.example.deliveryco.entity.DeliveryStatus;
+import com.example.deliveryco.messaging.CustomCorrelationData;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -18,10 +19,10 @@ public class RabbitMQConfig {
 
     //  QUEUE
     public static final String DELIVERY_REQUEST_QUEUE = "delivery_request_queue";
+    public static final String DELIVERY_REQUEST_DLQ = "delivery_request_dlq";
     public static final String DELIVERY_UPDATE_QUEUE = "delivery_update_queue";
     public static final String DELIVERY_UPDATE_DLQ =  "delivery_update_dlq";
     public static final String EMAIL_QUEUE = "email_queue";
-    public static final String DELIVERY_REQUEST_DLQ = "delivery_request_dlq";
 
     // EXCHANGE
     public static final String STORE_EXCHANGE = "store_exchange";
@@ -151,12 +152,37 @@ public class RabbitMQConfig {
     public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
         RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
         rabbitTemplate.setMessageConverter(jsonMessageConverter());
+        rabbitTemplate.setMandatory(true);
+
+        rabbitTemplate.setConfirmCallback((correlationData, ack, cause) -> {
+            if (ack) {
+                if (correlationData instanceof CustomCorrelationData) {
+                    CustomCorrelationData data = (CustomCorrelationData) correlationData;
+                    log.info("GLOBAL: RabbitMQ ACK received {}", data.getId());
+                } else {
+                    log.info("GLOBAL: RabbitMQ ACK received correlationData={}", correlationData);
+                }
+                return;
+            } else {
+                if (correlationData instanceof CustomCorrelationData) {
+                    CustomCorrelationData data = (CustomCorrelationData) correlationData;
+                    log.error("GLOBAL: RabbitMQ NOT ACK received {} cause={}", data.getId(), cause);
+                } else {
+                    log.error("GLOBAL: RabbitMQ NOT ACK received correlationData={} cause={}", correlationData, cause);
+                }
+            }
+        });
+
+        rabbitTemplate.setReturnsCallback(returned -> {
+            log.error("Returned unroutable exchange={} routingKey={} message={}", returned.getExchange(), returned.getRoutingKey(), returned.getMessage());
+        });
+
         return rabbitTemplate;
     }
     // helper
     public static String getStatusKey(DeliveryStatus status) {
         String key = switch (status) {
-            case RECIEVED  -> DELIVERY_UPDATE_RECIEVED;
+            case RECEIVED -> DELIVERY_UPDATE_RECIEVED;
             case PICKED_UP -> DELIVERY_UPDATE_PICKEDUP;
             case ON_DELIVERY -> DELIVERY_UPDATE_ON_DELIVERY;
             case LOST  -> DELIVERY_UPDATE_LOST;
@@ -168,7 +194,7 @@ public class RabbitMQConfig {
 
     public static String getStatusMessage(DeliveryStatus status) {
         String message = switch (status) {
-            case RECIEVED  -> "Your delivery order has been RECIEVED!";
+            case RECEIVED -> "Your delivery order has been RECIEVED!";
             case PICKED_UP ->  "Your delivery order has been PICKED_UP!";
             case ON_DELIVERY -> "Your delivery order has been ON_DELIVERY!";
             case LOST  -> "Your delivery order has been LOST!";
@@ -179,4 +205,3 @@ public class RabbitMQConfig {
     }
 
 }
-

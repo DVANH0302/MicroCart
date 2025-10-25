@@ -1,4 +1,4 @@
-package com.example.store.config;
+package com.example.emailservice.config;
 
 
 import org.springframework.context.annotation.Bean;
@@ -11,13 +11,14 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 public class AsyncConfig {
 
     @Bean
-    ThreadPoolTaskExecutor threadPoolTaskExecutor() {
+    ThreadPoolTaskExecutor taskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(5);
         executor.setMaxPoolSize(10);
         executor.setQueueCapacity(50);
+        executor.setKeepAliveSeconds(60);
         executor.setThreadNamePrefix("Async-");
-        return  executor;
+        executor.initialize();
+        return executor;
     }
-
 }
