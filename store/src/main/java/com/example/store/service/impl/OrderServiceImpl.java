@@ -8,6 +8,8 @@ import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 @Slf4j
 public class OrderServiceImpl implements OrderService {
@@ -37,5 +39,10 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public void refund(Integer orderId) {
         log.info("TODO: REFUND FLOW: SET ORDER TO LOST/CANCELLED, refund money, if cancelled then restock");
+    }
+
+    @Override
+    public Optional<Order> findByOrderIdWithUser(Integer orderId) {
+        return  orderRepository.findByIdWithUser(orderId);
     }
 }
