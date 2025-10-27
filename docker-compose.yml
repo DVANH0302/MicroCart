@@ -168,10 +168,52 @@ services:
       - pgdata-email:/var/lib/postgresql/data
       - ./sql-init/init-email.sql:/docker-entrypoint-initdb.d/01-init-email.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U deliveryuser -d deliverydb"]
+      test: ["CMD-SHELL", "pg_isready -U emailuser -d emaildb"]
       interval: 5s
       timeout: 3s
       retries: 10
+
+#
+#  BANK RELATED SERVICES
+#
+  bank-db:
+    image: postgres:16
+    container_name: bank-postgres
+    restart: unless-stopped
+    ports:
+      - "5436:5432"
+    environment:
+      POSTGRES_DB: bankdb
+      POSTGRES_USER: bankuser
+      POSTGRES_PASSWORD: bankpass
+    networks:
+      - store-network
+    volumes:
+      - pgdata-bank:/var/lib/postgresql/data
+      - ./sql-init/init-bank.sql:/docker-entrypoint-initdb.d/01-init-bank.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bankuser -d bankdb"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  bank-app:
+    build: ./bank
+    container_name: bank-app
+    ports:
+      - "8083:8083"
+    environment:
+      #database
+      SPRING_DATASOURCE_URL: jdbc:postgresql://bank-db:5432/bankdb
+      SPRING_DATASOURCE_USERNAME: bankuser
+      SPRING_DATASOURCE_PASSWORD: bankpass
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SERVER_PORT: 8083
+    depends_on:
+      bank-db:
+        condition: service_healthy
+    networks:
+      - store-network
 
 
 networks:
@@ -182,3 +224,4 @@ volumes:
   pgdata-store:
   pgdata-deliveryco:
   pgdata-email:
+  pgdata-bank:
