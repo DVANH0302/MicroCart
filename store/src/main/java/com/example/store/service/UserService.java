@@ -7,4 +7,11 @@ import java.util.Optional;
 
 public interface UserService {
     Optional<User> findById(Integer id);
+    Optional<User> findByUsername(String username);
+    User registerUser(String username,
+                      String rawPassword,
+                      String email,
+                      String firstName,
+                      String lastName,
+                      String bankAccountId);
 }
