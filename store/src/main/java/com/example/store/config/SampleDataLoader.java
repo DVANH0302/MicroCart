@@ -3,9 +3,9 @@ package com.example.store.config;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 
@@ -13,8 +13,9 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 @Slf4j
 public class SampleDataLoader implements CommandLineRunner{
-    
+
     private final JdbcTemplate jdbc;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public void run(String... args) {
@@ -77,10 +78,11 @@ public class SampleDataLoader implements CommandLineRunner{
         """);
 
 
-        // insert one user
+        // insert one user with a deterministic default password for local testing
+        String defaultPassword = passwordEncoder.encode("password123");
         jdbc.update("""
             INSERT INTO store.users(user_id, username, password_hash, email, first_name, last_name, bank_account_id)
-            VALUES (1, 'andy', 'lfadjlsjldj', 'andy@gmail.com', 'Andy', 'Doan', 'fjlksadf')
+            VALUES (1, 'andy', ?, 'andy@gmail.com', 'Andy', 'Doan', 'fjlksadf')
             ON CONFLICT (user_id) DO UPDATE
             SET username = EXCLUDED.username,
                 password_hash = EXCLUDED.password_hash,
@@ -88,7 +90,7 @@ public class SampleDataLoader implements CommandLineRunner{
                 first_name = EXCLUDED.first_name,
                 last_name = EXCLUDED.last_name,
                 bank_account_id = EXCLUDED.bank_account_id
-        """);
+        """, defaultPassword);
 
         // insert one order
         jdbc.update("""
