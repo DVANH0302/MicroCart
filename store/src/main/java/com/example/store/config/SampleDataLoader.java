@@ -79,18 +79,18 @@ public class SampleDataLoader implements CommandLineRunner{
 
 
         // insert one user with a deterministic default password for local testing
-        String defaultPassword = passwordEncoder.encode("password123");
-        jdbc.update("""
-            INSERT INTO store.users(user_id, username, password_hash, email, first_name, last_name, bank_account_id)
-            VALUES (1, 'andy', ?, 'andy@gmail.com', 'Andy', 'Doan', 'fjlksadf')
-            ON CONFLICT (user_id) DO UPDATE
-            SET username = EXCLUDED.username,
-                password_hash = EXCLUDED.password_hash,
-                email = EXCLUDED.email,
-                first_name = EXCLUDED.first_name,
-                last_name = EXCLUDED.last_name,
-                bank_account_id = EXCLUDED.bank_account_id
-        """, defaultPassword);
+        // String defaultPassword = passwordEncoder.encode("password123");
+        // jdbc.update("""
+        //     INSERT INTO store.users(user_id, username, password_hash, email, first_name, last_name, bank_account_id)
+        //     VALUES (1, 'andy', ?, 'andy@gmail.com', 'Andy', 'Doan', 'fjlksadf')
+        //     ON CONFLICT (user_id) DO UPDATE
+        //     SET username = EXCLUDED.username,
+        //         password_hash = EXCLUDED.password_hash,
+        //         email = EXCLUDED.email,
+        //         first_name = EXCLUDED.first_name,
+        //         last_name = EXCLUDED.last_name,
+        //         bank_account_id = EXCLUDED.bank_account_id
+        // """, defaultPassword);
 
         // insert one order
         jdbc.update("""
