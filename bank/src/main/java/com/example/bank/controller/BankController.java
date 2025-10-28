@@ -1,11 +1,17 @@
 package com.example.bank.controller;
 
+import com.example.bank.dto.request.CreateAccountRequest;
+import com.example.bank.dto.request.DepositRequest;
 import com.example.bank.dto.request.PaymentRequest;
 import com.example.bank.dto.request.RefundRequest;
+import com.example.bank.dto.request.WithdrawRequest;
 import com.example.bank.dto.response.AccountBalanceResponse;
+import com.example.bank.dto.response.CreateAccountResponse;
+import com.example.bank.dto.response.DepositResponse;
 import com.example.bank.dto.response.PaymentResponse;
 import com.example.bank.dto.response.RefundResponse;
 import com.example.bank.dto.response.TransactionResponse;
+import com.example.bank.dto.response.WithdrawResponse;
 import com.example.bank.service.BankService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -89,6 +95,39 @@ public class BankController {
     public ResponseEntity<AccountBalanceResponse> getAccountBalance(@PathVariable String accountId) {
         log.info("Received request to fetch balance for account: {}", accountId);
         AccountBalanceResponse response = bankService.getAccountBalance(accountId);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Create a new bank account
+     * POST /api/bank/account
+     */
+    @PostMapping("/account")
+    public ResponseEntity<CreateAccountResponse> createAccount(@Valid @RequestBody CreateAccountRequest request) {
+        log.info("Received request to create account: {}", request.getAccountId());
+        CreateAccountResponse response = bankService.createAccount(request);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    /**
+     * Deposit money into an account
+     * POST /api/bank/deposit
+     */
+    @PostMapping("/deposit")
+    public ResponseEntity<DepositResponse> deposit(@Valid @RequestBody DepositRequest request) {
+        log.info("Received deposit request: {} to account {}", request.getAmount(), request.getAccountId());
+        DepositResponse response = bankService.deposit(request);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Withdraw money from an account
+     * POST /api/bank/withdraw
+     */
+    @PostMapping("/withdraw")
+    public ResponseEntity<WithdrawResponse> withdraw(@Valid @RequestBody WithdrawRequest request) {
+        log.info("Received withdrawal request: {} from account {}", request.getAmount(), request.getAccountId());
+        WithdrawResponse response = bankService.withdraw(request);
         return ResponseEntity.ok(response);
     }
 

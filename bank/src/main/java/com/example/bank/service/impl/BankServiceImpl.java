@@ -1,11 +1,17 @@
 package com.example.bank.service.impl;
 
+import com.example.bank.dto.request.CreateAccountRequest;
+import com.example.bank.dto.request.DepositRequest;
 import com.example.bank.dto.request.PaymentRequest;
 import com.example.bank.dto.request.RefundRequest;
+import com.example.bank.dto.request.WithdrawRequest;
 import com.example.bank.dto.response.AccountBalanceResponse;
+import com.example.bank.dto.response.CreateAccountResponse;
+import com.example.bank.dto.response.DepositResponse;
 import com.example.bank.dto.response.PaymentResponse;
 import com.example.bank.dto.response.RefundResponse;
 import com.example.bank.dto.response.TransactionResponse;
+import com.example.bank.dto.response.WithdrawResponse;
 import com.example.bank.entity.BankAccount;
 import com.example.bank.entity.BankTransaction;
 import com.example.bank.entity.TransactionStatus;
@@ -270,6 +276,101 @@ public class BankServiceImpl implements BankService {
             .balance(account.getBalance())
             .timestamp(LocalDateTime.now())
             .build();
+    }
+
+    @Override
+    @Transactional
+    public CreateAccountResponse createAccount(CreateAccountRequest request) {
+        log.info("Creating new account: {} for holder: {}", request.getAccountId(), request.getHolderName());
+
+        // Check if account already exists
+        if (accountRepository.existsById(request.getAccountId())) {
+            log.warn("Account already exists: {}", request.getAccountId());
+            throw new DuplicateTransactionException(
+                "Account with ID " + request.getAccountId() + " already exists");
+        }
+
+        // Create new account
+        BankAccount newAccount = BankAccount.builder()
+            .accountId(request.getAccountId())
+            .holderName(request.getHolderName())
+            .balance(request.getInitialBalance())
+            .createdAt(LocalDateTime.now())
+            .updatedAt(LocalDateTime.now())
+            .build();
+
+        // Save to database
+        BankAccount savedAccount = accountRepository.save(newAccount);
+
+        log.info("Account created successfully: {}", savedAccount.getAccountId());
+
+        return CreateAccountResponse.success(
+            savedAccount.getAccountId(),
+            savedAccount.getHolderName(),
+            savedAccount.getBalance(),
+            savedAccount.getCreatedAt()
+        );
+    }
+
+    @Override
+    @Transactional
+    public DepositResponse deposit(DepositRequest request) {
+        log.info("Processing deposit: {} to account {}", request.getAmount(), request.getAccountId());
+
+        // Fetch account with pessimistic lock to prevent concurrent modifications
+        BankAccount account = accountRepository.findByIdWithLock(request.getAccountId())
+            .orElseThrow(() -> new AccountNotFoundException(request.getAccountId()));
+
+        // Credit the amount to the account
+        account.credit(request.getAmount());
+
+        // Update the account
+        BankAccount updatedAccount = accountRepository.save(account);
+
+        log.info("Deposit successful. Account: {}, New balance: {}",
+            account.getAccountId(), updatedAccount.getBalance());
+
+        return DepositResponse.success(
+            updatedAccount.getAccountId(),
+            request.getAmount(),
+            updatedAccount.getBalance()
+        );
+    }
+
+    @Override
+    @Transactional
+    public WithdrawResponse withdraw(WithdrawRequest request) {
+        log.info("Processing withdrawal: {} from account {}", request.getAmount(), request.getAccountId());
+
+        // Fetch account with pessimistic lock to prevent concurrent modifications
+        BankAccount account = accountRepository.findByIdWithLock(request.getAccountId())
+            .orElseThrow(() -> new AccountNotFoundException(request.getAccountId()));
+
+        // Check sufficient balance
+        if (!account.hasSufficientBalance(request.getAmount())) {
+            log.warn("Insufficient funds for withdrawal. Account: {}, Required: {}, Available: {}",
+                account.getAccountId(), request.getAmount(), account.getBalance());
+            throw new InsufficientFundsException(
+                account.getAccountId(),
+                request.getAmount(),
+                account.getBalance()
+            );
+        }
+
+        // Debit the amount from the account
+        account.debit(request.getAmount());
+
+        // Update the account
+        BankAccount updatedAccount = accountRepository.save(account);
+
+        log.info("Withdrawal successful. Account: {}, New balance: {}",
+            account.getAccountId(), updatedAccount.getBalance());
+
+        return WithdrawResponse.success(
+            updatedAccount.getAccountId(),
+            request.getAmount(),
+            updatedAccount.getBalance()
+        );
     }
 
     /**

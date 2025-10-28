@@ -1,11 +1,17 @@
 package com.example.bank.service;
 
+import com.example.bank.dto.request.CreateAccountRequest;
+import com.example.bank.dto.request.DepositRequest;
 import com.example.bank.dto.request.PaymentRequest;
 import com.example.bank.dto.request.RefundRequest;
+import com.example.bank.dto.request.WithdrawRequest;
 import com.example.bank.dto.response.AccountBalanceResponse;
+import com.example.bank.dto.response.CreateAccountResponse;
+import com.example.bank.dto.response.DepositResponse;
 import com.example.bank.dto.response.PaymentResponse;
 import com.example.bank.dto.response.RefundResponse;
 import com.example.bank.dto.response.TransactionResponse;
+import com.example.bank.dto.response.WithdrawResponse;
 
 import java.util.List;
 
@@ -48,4 +54,25 @@ public interface BankService {
      * @return Account balance details
      */
     AccountBalanceResponse getAccountBalance(String accountId);
+
+    /**
+     * Create a new bank account
+     * @param request Account creation request
+     * @return Account creation response
+     */
+    CreateAccountResponse createAccount(CreateAccountRequest request);
+
+    /**
+     * Deposit money into an account
+     * @param request Deposit request details
+     * @return Deposit response with updated balance
+     */
+    DepositResponse deposit(DepositRequest request);
+
+    /**
+     * Withdraw money from an account
+     * @param request Withdrawal request details
+     * @return Withdrawal response with updated balance
+     */
+    WithdrawResponse withdraw(WithdrawRequest request);
 }
