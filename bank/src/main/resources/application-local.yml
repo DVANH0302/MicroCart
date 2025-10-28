@@ -1,6 +1,6 @@
 spring:
   application:
-    name: bank-service
+    name: bank-service-local
 
   datasource:
     url: jdbc:postgresql://localhost:5436/bankdb
@@ -27,19 +27,18 @@ spring:
         order_updates: true
     show-sql: true
 
-  # Jackson configuration for JSON serialization
   jackson:
     serialization:
       write-dates-as-timestamps: false
     time-zone: UTC
 
+# 本地开发使用不同的端口
 server:
-  port: 8101
+  port: 8201  # 本地开发端口，避免与 Docker 容器冲突
   error:
     include-message: always
     include-binding-errors: always
 
-# Actuator endpoints for monitoring
 management:
   endpoints:
     web:
@@ -49,7 +48,6 @@ management:
     health:
       show-details: always
 
-# Logging configuration
 logging:
   level:
     com.example.bank: DEBUG

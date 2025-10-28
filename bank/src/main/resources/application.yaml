@@ -3,4 +3,4 @@ spring:
     name: bank
 
 server:
-  port: 8083
+  port: 8101
