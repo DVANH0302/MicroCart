@@ -223,7 +223,7 @@ public class SampleDataLoader implements CommandLineRunner {
         try {
             jdbc.update("""
                 INSERT INTO users(username, password_hash, email, first_name, last_name, bank_account_id)
-                VALUES (?, ?, 'andy@gmail.com', 'Andy', 'Doan', 'fjlksadf')
+                VALUES (?, ?, 'andy@gmail.com', 'Andy', 'Doan', 'CUST_001')
                 ON CONFLICT (username) DO UPDATE
                 SET password_hash = EXCLUDED.password_hash,
                     email = EXCLUDED.email,
@@ -243,7 +243,7 @@ public class SampleDataLoader implements CommandLineRunner {
             log.info("Creating test order...");
             jdbc.update("""
                 INSERT INTO orders(user_id, product_id, quantity, total_amount, status, bank_transaction_id, warehouse_ids)
-                VALUES (?, 1001, 10, 1000.00, 'PENDING', 'fjlksadf', '1,2')
+                VALUES (?, 1001, 10, 1000.00, 'PENDING', 'seed-txn-001', '1,2')
             """, userId);
             log.info("Test order created for user_id: {}", userId);
             log.info("Seed data creation completed successfully");

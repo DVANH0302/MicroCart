@@ -1,10 +1,15 @@
 package com.example.store.service.impl;
 
 import com.example.store.dto.request.AvailabilityRequest;
+import com.example.store.dto.request.BankPaymentRequest;
+import com.example.store.dto.request.BankRefundRequest;
 import com.example.store.dto.request.DeliveryRequest;
 import com.example.store.dto.request.OrderRequest;
+import com.example.store.dto.request.ReleaseRequest;
 import com.example.store.dto.request.ReserveRequest;
 import com.example.store.dto.response.AvailabilityResponse;
+import com.example.store.dto.response.BankPaymentResponse;
+import com.example.store.dto.response.BankRefundResponse;
 import com.example.store.dto.response.OrderResponse;
 import com.example.store.dto.response.ReserveResponse;
 import com.example.store.entity.DeliveryStatus;
@@ -18,10 +23,17 @@ import com.example.store.service.InventoryService;
 import com.example.store.service.OrderService;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -37,7 +49,7 @@ public class OrderServiceImpl implements OrderService {
             OrderRepository orderRepository,
             UserRepository userRepository,
             InventoryService inventoryService,
-            DeliveryService deliveryService,
+            @Lazy DeliveryService deliveryService,
             RestTemplate restTemplate) {
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
@@ -54,41 +66,42 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new OrderException("User not found"));
 
         // 2. Check inventory availability
-        AvailabilityResponse availability = inventoryService.plan(AvailabilityRequest.builder()
-                .productId(request.getProductId())
-                .quantity(request.getQuantity())
-                .build());
+        AvailabilityRequest availabilityRequest = new AvailabilityRequest();
+        availabilityRequest.setProductId(request.getProductId());
+        availabilityRequest.setQuantity(request.getQuantity());
+        AvailabilityResponse availability = inventoryService.plan(availabilityRequest);
 
-        if (!availability.isAvailable()) {
+        if (!availability.isCanFulfill()) {
             throw new OrderException("Product not available in requested quantity");
         }
 
         // 3. Reserve inventory
-        ReserveResponse reservation = inventoryService.reserve(ReserveRequest.builder()
-                .productId(request.getProductId())
-                .quantity(request.getQuantity())
-                .build());
+        ReserveRequest reserveRequest = new ReserveRequest();
+        reserveRequest.setProductId(request.getProductId());
+        reserveRequest.setQuantity(request.getQuantity());
+        ReserveResponse reservation = inventoryService.reserve(reserveRequest);
 
         // 4. Create order
+        List<Integer> expandedWarehouseIds = expandWarehouseAllocations(availability);
         Order order = Order.Builder.newBuilder()
                 .user(user)
                 .productId(request.getProductId())
                 .quantity(request.getQuantity())
                 .totalAmount(request.getTotalAmount())
-                .status(DeliveryStatus.REQUESTED.name())
-                .warehouseIds(availability.getWarehouseIds())
+                .status(DeliveryStatus.RECEIVED.name())
+                .warehouseIds(new ArrayList<>(expandedWarehouseIds))
                 .build();
 
         orderRepository.save(order);
 
         // 5. Process payment through Bank service
         try {
-            String bankUrl = "http://localhost:8083/api/bank/payment";
+            String bankUrl = "http://bank-app:8083/api/bank/payment";
             BankPaymentRequest paymentRequest = BankPaymentRequest.builder()
-                    .fromAccountId(user.getBankAccountId())
-                    .toAccountId("STORE_ACCOUNT") // Store's bank account
-                    .amount(request.getTotalAmount())
                     .orderId(order.getId())
+                    .fromAccount(user.getBankAccountId())
+                    .toAccount("STORE_MAIN") // Store's bank account
+                    .amount(BigDecimal.valueOf(request.getTotalAmount()))
                     .build();
 
             BankPaymentResponse paymentResponse = restTemplate.postForObject(
@@ -99,34 +112,32 @@ public class OrderServiceImpl implements OrderService {
 
             if (paymentResponse != null && "SUCCESS".equals(paymentResponse.getStatus())) {
                 order.setBankTransactionId(paymentResponse.getTransactionId());
-                order.setStatus(DeliveryStatus.PAYMENT_CONFIRMED.name());
+                order.setStatus(DeliveryStatus.RECEIVED.name());
                 orderRepository.save(order);
 
                 // 6. Send delivery request
-                deliveryService.requestDelivery(DeliveryRequest.builder()
-                        .orderId(order.getId())
-                        .userFullName(user.getFirstName() + " " + user.getLastName())
-                        .userEmail(user.getEmail())
-                        .address("TODO: Add address to User entity")
-                        .quantity(request.getQuantity())
-                        .warehouseIds(availability.getWarehouseIds())
-                        .build());
+                deliveryService.requestDelivery(new DeliveryRequest(
+                        order.getId(),
+                        user.getFirstName() + " " + user.getLastName(),
+                        user.getEmail(),
+                        "TODO: Add address to User entity",
+                        request.getQuantity(),
+                        expandedWarehouseIds.stream().distinct().collect(Collectors.toList())
+                ));
 
                 return mapToOrderResponse(order);
             } else {
                 // Payment failed - release inventory
-                inventoryService.release(ReserveRequest.builder()
-                        .productId(request.getProductId())
-                        .quantity(request.getQuantity())
-                        .build());
+                releaseReservedStock(order.getId(), request.getProductId(), reservation);
+                order.setStatus(DeliveryStatus.CANCELLED.name());
+                orderRepository.save(order);
                 throw new OrderException("Payment failed");
             }
         } catch (Exception e) {
             // In case of any error - release inventory
-            inventoryService.release(ReserveRequest.builder()
-                    .productId(request.getProductId())
-                    .quantity(request.getQuantity())
-                    .build());
+            releaseReservedStock(order.getId(), request.getProductId(), reservation);
+            order.setStatus(DeliveryStatus.CANCELLED.name());
+            orderRepository.save(order);
             throw new OrderException("Order creation failed: " + e.getMessage());
         }
     }
@@ -161,10 +172,11 @@ public class OrderServiceImpl implements OrderService {
         
         try {
             // 1. Process refund through Bank service
-            String bankUrl = "http://localhost:8083/api/bank/refund";
+            String bankUrl = "http://bank-app:8083/api/bank/refund";
             BankRefundRequest refundRequest = BankRefundRequest.builder()
-                    .originalTransactionId(order.getBankTransactionId())
                     .orderId(order.getId())
+                    .originalTransactionId(order.getBankTransactionId())
+                    .amount(BigDecimal.valueOf(order.getTotalAmount()))
                     .build();
 
             BankRefundResponse refundResponse = restTemplate.postForObject(
@@ -174,16 +186,14 @@ public class OrderServiceImpl implements OrderService {
             );
 
             if (refundResponse != null && "SUCCESS".equals(refundResponse.getStatus())) {
+                String previousStatus = order.getStatus();
                 // 2. Update order status
-                order.setStatus(DeliveryStatus.REFUNDED.name());
+                order.setStatus(DeliveryStatus.CANCELLED.name());
                 orderRepository.save(order);
 
                 // 3. Return items to inventory if delivery was cancelled (not lost)
-                if (DeliveryStatus.CANCELLED.name().equals(order.getStatus())) {
-                    inventoryService.release(ReserveRequest.builder()
-                            .productId(order.getProductId())
-                            .quantity(order.getQuantity())
-                            .build());
+                if (DeliveryStatus.CANCELLED.name().equals(previousStatus)) {
+                    releaseStockFromOrderRecord(order);
                 }
             } else {
                 throw new OrderException("Refund failed");
@@ -196,6 +206,72 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public Optional<Order> findByOrderIdWithUser(Integer orderId) {
         return orderRepository.findByIdWithUser(orderId);
+    }
+
+    private List<Integer> expandWarehouseAllocations(AvailabilityResponse availability) {
+        if (availability == null || availability.getAllocations() == null) {
+            return Collections.emptyList();
+        }
+        List<Integer> result = new ArrayList<>();
+        for (AvailabilityResponse.WarehouseAllocation allocation : availability.getAllocations()) {
+            if (allocation == null || allocation.getWarehouseId() == null || allocation.getAvailable() == null) {
+                continue;
+            }
+            int quantity = Math.max(0, allocation.getAvailable());
+            for (int i = 0; i < quantity; i++) {
+                result.add(allocation.getWarehouseId());
+            }
+        }
+        return result;
+    }
+
+    private void releaseReservedStock(Integer orderId, Integer productId, ReserveResponse reservation) {
+        if (reservation == null || reservation.getAllocations() == null || reservation.getAllocations().isEmpty()) {
+            return;
+        }
+        ReleaseRequest releaseRequest = new ReleaseRequest();
+        releaseRequest.setOrderId(orderId);
+        releaseRequest.setProductId(productId);
+        releaseRequest.setAllocations(cloneAllocations(reservation.getAllocations()));
+        inventoryService.release(releaseRequest);
+    }
+
+    private void releaseStockFromOrderRecord(Order order) {
+        if (order == null || order.getWarehouseIds() == null || order.getWarehouseIds().isEmpty()) {
+            return;
+        }
+        Map<Integer, Long> grouped = order.getWarehouseIds().stream()
+                .collect(Collectors.groupingBy(id -> id, Collectors.counting()));
+        List<ReleaseRequest.Alloc> allocations = grouped.entrySet().stream()
+                .map(entry -> {
+                    ReleaseRequest.Alloc alloc = new ReleaseRequest.Alloc();
+                    alloc.setWarehouseId(entry.getKey());
+                    alloc.setQty(entry.getValue().intValue());
+                    return alloc;
+                })
+                .collect(Collectors.toList());
+        if (allocations.isEmpty()) {
+            return;
+        }
+        ReleaseRequest releaseRequest = new ReleaseRequest();
+        releaseRequest.setOrderId(order.getId());
+        releaseRequest.setProductId(order.getProductId());
+        releaseRequest.setAllocations(allocations);
+        inventoryService.release(releaseRequest);
+    }
+
+    private List<ReleaseRequest.Alloc> cloneAllocations(List<ReleaseRequest.Alloc> allocations) {
+        if (allocations == null || allocations.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return allocations.stream()
+                .map(original -> {
+                    ReleaseRequest.Alloc copy = new ReleaseRequest.Alloc();
+                    copy.setWarehouseId(original.getWarehouseId());
+                    copy.setQty(original.getQty());
+                    return copy;
+                })
+                .collect(Collectors.toList());
     }
 
     private OrderResponse mapToOrderResponse(Order order) {

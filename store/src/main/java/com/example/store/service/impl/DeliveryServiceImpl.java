@@ -10,6 +10,7 @@ import com.example.store.service.EmailService;
 import com.example.store.service.OrderService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -21,7 +22,7 @@ public class DeliveryServiceImpl implements DeliveryService {
     private final OrderService orderService;
     private final EmailService emailService;
 
-    public DeliveryServiceImpl(RabbitTemplate rabbitTemplate, OrderService orderService,  EmailService emailService) {
+    public DeliveryServiceImpl(RabbitTemplate rabbitTemplate, @Lazy OrderService orderService, @Lazy EmailService emailService) {
         this.rabbitTemplate = rabbitTemplate;
         this.orderService = orderService;
         this.emailService = emailService;

@@ -3,9 +3,12 @@ package com.example.store.dto.request;
 import lombok.Builder;
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 @Builder
 public class BankRefundRequest {
-    private String originalTransactionId;
     private Integer orderId;
+    private String originalTransactionId;
+    private BigDecimal amount;
 }
