@@ -57,17 +57,17 @@ services:
       SPRING_RABBITMQ_PASSWORD: guest
       SPRING_RABBITMQ_USERNAME: guest
 
-      #Database
-      SPRING_DATASOURCE_URL: jdbc:postgresql://store-db:5432/storedb
+      #Database - connecting to local PostgreSQL
+      SPRING_DATASOURCE_URL: jdbc:postgresql://host.docker.internal:5433/storedb
       SPRING_DATASOURCE_USERNAME: storeuser
       SPRING_DATASOURCE_PASSWORD: storepass
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SERVER_PORT: 8082
     depends_on:
-      store-db:
-        condition: service_healthy
       rabbitmq:
         condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - store-network
 
