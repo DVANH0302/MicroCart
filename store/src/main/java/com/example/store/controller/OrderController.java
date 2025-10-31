@@ -31,4 +31,12 @@ public class OrderController {
         OrderResponse response = orderService.getOrder(orderId);
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/{orderId}/refund")
+    public ResponseEntity<OrderResponse> refundOrder(@PathVariable Integer orderId) {
+        log.info("Received refund request for orderId: {}", orderId);
+        orderService.refund(orderId);
+        OrderResponse response = orderService.getOrder(orderId);
+        return ResponseEntity.ok(response);
+    }
 }

@@ -1,7 +1,7 @@
 # Multi-stage Dockerfile for Bank Service
 
 # Stage 1: Build
-FROM gradle:8.5-jdk17-alpine AS build
+FROM gradle:8.5-jdk17 AS build
 WORKDIR /app
 
 # Copy gradle files for dependency caching
@@ -18,12 +18,13 @@ COPY src ./src
 RUN gradle clean build -x test --no-daemon
 
 # Stage 2: Runtime
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:17-jre
 WORKDIR /app
 
 # Add non-root user for security
-RUN addgroup -S spring && adduser -S spring -G spring
-USER spring:spring
+RUN groupadd --system spring \
+  && useradd --system --gid spring --shell /usr/sbin/nologin spring
+USER spring
 
 # Copy the built JAR from build stage
 COPY --from=build /app/build/libs/*.jar app.jar

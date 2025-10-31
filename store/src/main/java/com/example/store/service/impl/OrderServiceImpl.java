@@ -19,10 +19,12 @@ import com.example.store.exception.OrderException;
 import com.example.store.repository.OrderRepository;
 import com.example.store.repository.UserRepository;
 import com.example.store.service.DeliveryService;
+import com.example.store.service.EmailService;
 import com.example.store.service.InventoryService;
 import com.example.store.service.OrderService;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -34,6 +36,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @Slf4j
@@ -43,19 +47,25 @@ public class OrderServiceImpl implements OrderService {
     private final UserRepository userRepository;
     private final InventoryService inventoryService;
     private final DeliveryService deliveryService;
+    private final EmailService emailService;
     private final RestTemplate restTemplate;
+    private final long deliveryRequestDelayMs;
 
     public OrderServiceImpl(
             OrderRepository orderRepository,
             UserRepository userRepository,
             InventoryService inventoryService,
             @Lazy DeliveryService deliveryService,
-            RestTemplate restTemplate) {
+            @Lazy EmailService emailService,
+            RestTemplate restTemplate,
+            @Value("${store.delivery.request-delay-ms:10000}") long deliveryRequestDelayMs) {
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
         this.inventoryService = inventoryService;
         this.deliveryService = deliveryService;
+        this.emailService = emailService;
         this.restTemplate = restTemplate;
+        this.deliveryRequestDelayMs = deliveryRequestDelayMs;
     }
 
     @Transactional
@@ -116,14 +126,7 @@ public class OrderServiceImpl implements OrderService {
                 orderRepository.save(order);
 
                 // 6. Send delivery request
-                deliveryService.requestDelivery(new DeliveryRequest(
-                        order.getId(),
-                        user.getFirstName() + " " + user.getLastName(),
-                        user.getEmail(),
-                        "TODO: Add address to User entity",
-                        request.getQuantity(),
-                        expandedWarehouseIds.stream().distinct().collect(Collectors.toList())
-                ));
+                scheduleDeliveryRequest(order, user, request, expandedWarehouseIds);
 
                 return mapToOrderResponse(order);
             } else {
@@ -169,6 +172,17 @@ public class OrderServiceImpl implements OrderService {
     public void refund(Integer orderId) {
         Order order = orderRepository.findByIdWithUser(orderId)
                 .orElseThrow(() -> new OrderException("Order not found"));
+
+        DeliveryStatus currentStatus;
+        try {
+            currentStatus = DeliveryStatus.valueOf(order.getStatus());
+        } catch (IllegalArgumentException e) {
+            throw new OrderException("Invalid current order status: " + order.getStatus());
+        }
+
+        if (currentStatus != DeliveryStatus.RECEIVED) {
+            throw new OrderException("Order cannot be cancelled once picked up by DeliveryCo");
+        }
         
         try {
             // 1. Process refund through Bank service
@@ -186,15 +200,15 @@ public class OrderServiceImpl implements OrderService {
             );
 
             if (refundResponse != null && "SUCCESS".equals(refundResponse.getStatus())) {
-                String previousStatus = order.getStatus();
                 // 2. Update order status
                 order.setStatus(DeliveryStatus.CANCELLED.name());
                 orderRepository.save(order);
 
-                // 3. Return items to inventory if delivery was cancelled (not lost)
-                if (DeliveryStatus.CANCELLED.name().equals(previousStatus)) {
-                    releaseStockFromOrderRecord(order);
-                }
+                // 3. Return items to inventory
+                releaseStockFromOrderRecord(order);
+
+                // 4. Notify customer
+                emailService.sendStatusEmail(order.getId(), DeliveryStatus.CANCELLED);
             } else {
                 throw new OrderException("Refund failed");
             }
@@ -287,5 +301,51 @@ public class OrderServiceImpl implements OrderService {
                 .createdAt(order.getCreatedAt())
                 .updatedAt(order.getUpdatedAt())
                 .build();
+    }
+
+    private void scheduleDeliveryRequest(
+            Order order,
+            User user,
+            OrderRequest request,
+            List<Integer> expandedWarehouseIds) {
+
+        List<Integer> distinctWarehouseIds = expandedWarehouseIds.stream()
+                .distinct()
+                .collect(Collectors.toList());
+
+        DeliveryRequest deliveryRequest = new DeliveryRequest(
+                order.getId(),
+                user.getFirstName() + " " + user.getLastName(),
+                user.getEmail(),
+                "TODO: Add address to User entity",
+                request.getQuantity(),
+                distinctWarehouseIds
+        );
+
+        Runnable task = () -> {
+            try {
+                Optional<Order> latestOrder = orderRepository.findById(order.getId());
+                if (latestOrder.isEmpty()) {
+                    log.warn("Order {} not found when attempting to send delayed delivery request", order.getId());
+                    return;
+                }
+
+                String status = latestOrder.get().getStatus();
+                if (DeliveryStatus.CANCELLED.name().equals(status)) {
+                    log.info("Skipping delivery request for cancelled order {}", order.getId());
+                    return;
+                }
+
+                log.info("Sending delayed delivery request for order {}", order.getId());
+                deliveryService.requestDelivery(deliveryRequest);
+            } catch (Exception ex) {
+                log.error("Failed to send delayed delivery request for order {}", order.getId(), ex);
+            }
+        };
+
+        CompletableFuture.runAsync(
+                task,
+                CompletableFuture.delayedExecutor(deliveryRequestDelayMs, TimeUnit.MILLISECONDS)
+        );
     }
 }
