@@ -57,7 +57,7 @@ services:
       SPRING_RABBITMQ_PASSWORD: guest
       SPRING_RABBITMQ_USERNAME: guest
 
-      #Database
+      #Database - connecting to local PostgreSQL
       SPRING_DATASOURCE_URL: jdbc:postgresql://store-db:5432/storedb
       SPRING_DATASOURCE_USERNAME: storeuser
       SPRING_DATASOURCE_PASSWORD: storepass

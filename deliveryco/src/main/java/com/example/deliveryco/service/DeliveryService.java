@@ -34,6 +34,12 @@ public class DeliveryService {
     @Value("${store.alert.endpoint:/api/delivery/alert}")
     private String ALERT_ENDPOINT;
 
+    @Value("${deliveryco.simulation.pickup-delay-ms:15000}")
+    private long pickupDelayMs;
+
+    @Value("${deliveryco.simulation.status-interval-ms:5000}")
+    private long statusIntervalMs;
+
     private final RestTemplate restTemplate;
 
     private final RabbitTemplate rabbitTemplate;
@@ -66,35 +72,35 @@ public class DeliveryService {
         log.info("Delivery after being saved: {}", delivery);
 
         // simulation
-         int orderId = deliveryRequest.getOrderId();
-         try {
-             // PICKED_UP
-             log.info("orderId {} is PICKED UP", orderId);
-             Thread.sleep(5000);
-             processUpdate(orderId, DeliveryStatus.PICKED_UP);
+        int orderId = deliveryRequest.getOrderId();
+        try {
+            // PICKED_UP
+            log.info("orderId {} is PICKED UP", orderId);
+            Thread.sleep(pickupDelayMs);
+            processUpdate(orderId, DeliveryStatus.PICKED_UP);
 
-             // ON_DELIVERY
-             log.info("orderId {} is  ON_DELIVERY", orderId);
-             Thread.sleep(5000);
-             processUpdate(orderId, DeliveryStatus.ON_DELIVERY);
+            // ON_DELIVERY
+            log.info("orderId {} is  ON_DELIVERY", orderId);
+            Thread.sleep(statusIntervalMs);
+            processUpdate(orderId, DeliveryStatus.ON_DELIVERY);
 
-             // DELIVERED OR LOST (5%)
-             Thread.sleep(5000);
-             if (random.nextInt(100) < 5) {
-                 log.info("orderId {} is  LOST", orderId);
-                 processUpdate(orderId, DeliveryStatus.LOST);
-             } else{
-                 log.info("orderId {} is  DELIVERED", orderId);
-                 processUpdate(orderId, DeliveryStatus.DELIVERED);
-             }
+            // DELIVERED OR LOST (5%)
+            Thread.sleep(statusIntervalMs);
+            if (random.nextInt(100) < 5) {
+                log.info("orderId {} is  LOST", orderId);
+                processUpdate(orderId, DeliveryStatus.LOST);
+            } else{
+                log.info("orderId {} is  DELIVERED", orderId);
+                processUpdate(orderId, DeliveryStatus.DELIVERED);
+            }
 
-         } catch (Exception e) {
+        } catch (Exception e) {
 
-             log.error("orderId delivery failed {}", orderId);
-             Thread.currentThread().interrupt();
-             throw new RuntimeException("Delivery processing failed", e);
-         }
-         }
+            log.error("orderId delivery failed {}", orderId);
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Delivery processing failed", e);
+        }
+    }
     public void processUpdate(int orderId, DeliveryStatus deliveryStatus) {
         deliveryUpdateService.saveStatus(orderId, deliveryStatus);
         sendUpdate(

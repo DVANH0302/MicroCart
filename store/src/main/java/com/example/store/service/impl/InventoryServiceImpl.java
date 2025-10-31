@@ -1,4 +1,4 @@
-package com.example.store.service;
+package com.example.store.service.impl;
 
 import org.springframework.stereotype.Service;
 
@@ -9,7 +9,7 @@ import com.example.store.dto.response.AvailabilityResponse;
 import com.example.store.dto.response.ReserveResponse;
 import com.example.store.entity.WarehouseStock;
 import com.example.store.repository.WarehouseStockRepository;
-
+import com.example.store.service.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
