@@ -12,8 +12,6 @@ import com.example.store.messaging.CustomCorrelationData;
 import com.example.store.service.EmailService;
 import com.example.store.service.OrderService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.amqp.core.TopicExchange;
-import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -37,7 +35,7 @@ public class EmailServiceImpl implements EmailService {
     @Async
     public void sendStatusEmail(Integer orderId,  DeliveryStatus status) {
         try {
-            Order order = orderService.findByOrderIdWithUser(orderId).orElseThrow(
+            Order order = orderService.findByIdWithUser(orderId).orElseThrow(
                     () -> new RuntimeException(String.format("The order id %d is not found!", orderId))
             );
 
@@ -83,7 +81,7 @@ public class EmailServiceImpl implements EmailService {
     @Async
     public void sendAlertFailedDeliveryEmail(Integer orderId) {
         try{
-            Order order = orderService.findByOrderIdWithUser(orderId).orElseThrow(
+            Order order = orderService.findByIdWithUser(orderId).orElseThrow(
                     () -> new RuntimeException(String.format("The order id %d is not found!", orderId))
             );
 

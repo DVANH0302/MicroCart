@@ -84,6 +84,10 @@ public class Order {
         }
     }
 
+    public void setId(int id) {
+        this.id = id;
+    }
+
     public void setProductId(int productId) {
         this.productId = productId;
     }
