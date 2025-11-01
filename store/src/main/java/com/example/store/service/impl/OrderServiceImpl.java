@@ -35,19 +35,11 @@ public class OrderServiceImpl implements OrderService {
 
 
     private final OrderRepository orderRepository;
-    private final InventoryService inventoryService;
-    private final EmailService emailService;
-    private final RestTemplate restTemplate;
+
 
     public OrderServiceImpl(
-            OrderRepository orderRepository,
-            InventoryService inventoryService,
-            @Lazy EmailService emailService,
-            RestTemplate restTemplate) {
+            OrderRepository orderRepository) {
         this.orderRepository = orderRepository;
-        this.inventoryService = inventoryService;
-        this.emailService = emailService;
-        this.restTemplate = restTemplate;
     }
 
     @Transactional
@@ -110,29 +102,6 @@ public class OrderServiceImpl implements OrderService {
     }
 
 
-    private void releaseStockFromOrderRecord(Order order) {
-        if (order == null || order.getWarehouseIds() == null || order.getWarehouseIds().isEmpty()) {
-            return;
-        }
-        Map<Integer, Long> grouped = order.getWarehouseIds().stream()
-                .collect(Collectors.groupingBy(id -> id, Collectors.counting()));
-        List<ReleaseRequest.Alloc> allocations = grouped.entrySet().stream()
-                .map(entry -> {
-                    ReleaseRequest.Alloc alloc = new ReleaseRequest.Alloc();
-                    alloc.setWarehouseId(entry.getKey());
-                    alloc.setQty(entry.getValue().intValue());
-                    return alloc;
-                })
-                .collect(Collectors.toList());
-        if (allocations.isEmpty()) {
-            return;
-        }
-        ReleaseRequest releaseRequest = new ReleaseRequest();
-        releaseRequest.setOrderId(order.getId());
-        releaseRequest.setProductId(order.getProductId());
-        releaseRequest.setAllocations(allocations);
-        inventoryService.release(releaseRequest);
-    }
 
 
     private OrderResponse mapToOrderResponse(Order order) {
