@@ -5,6 +5,7 @@ import com.example.store.dto.request.RegisterRequest;
 import com.example.store.dto.response.LoginResponse;
 import com.example.store.dto.response.RegisterResponse;
 import com.example.store.entity.User;
+import com.example.store.security.JwtService;
 import com.example.store.security.StoreUserDetails;
 import com.example.store.service.UserService;
 import jakarta.validation.Valid;
@@ -28,6 +29,7 @@ public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final UserService userService;
+    private final JwtService jwtService;
 
     @PostMapping("/register")
     public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
@@ -56,10 +58,13 @@ public class AuthController {
         );
         StoreUserDetails principal = (StoreUserDetails) authentication.getPrincipal();
 
+        String token = jwtService.generateToken(principal);
+
         LoginResponse response = new LoginResponse(
                 principal.getId(),
                 principal.getUsername(),
                 principal.getEmail(),
+                token,
                 "Login successful"
         );
         return ResponseEntity.ok(response);
