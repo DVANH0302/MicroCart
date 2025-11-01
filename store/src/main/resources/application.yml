@@ -53,3 +53,8 @@ server:
 logging:
   level:
     org.springframework.amqp: DEBUG
+
+security:
+  jwt:
+    secret: ${JWT_SECRET:dev-only-not-for-prod}
+    expiration-minutes: ${JWT_EXP_MINUTES:60}
