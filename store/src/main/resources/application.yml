@@ -56,5 +56,5 @@ logging:
 
 security:
   jwt:
-    secret: ${JWT_SECRET:dev-only-not-for-prod}
+    secret: ${JWT_SECRET:dev-only-not-for-prod-dev-only-not-for-prod}
     expiration-minutes: ${JWT_EXP_MINUTES:60}
