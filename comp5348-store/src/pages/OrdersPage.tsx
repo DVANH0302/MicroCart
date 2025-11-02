@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { useOrders } from '../context/OrdersContext';
 import { useAuth } from '../context/AuthContext';
@@ -20,8 +20,8 @@ const formatTransactionId = (transactionId?: string | null) => {
 };
 
 const OrdersPage = () => {
-  const { user } = useAuth();
-  const { orders, fetchOrder, requestRefund } = useOrders();
+  const { user, token } = useAuth();
+  const { orders, fetchOrder, requestRefund, fetchOrdersForUser } = useOrders();
 
   const [lookupId, setLookupId] = useState('');
   const [lookupStatus, setLookupStatus] = useState<string | null>(null);
@@ -40,6 +40,24 @@ const OrdersPage = () => {
       }),
     [orders],
   );
+
+  useEffect(() => {
+    // Wait for both user and token to be available to avoid 403 due to missing Authorization header.
+    if (!user || !token) return;
+    setLookupError(null);
+    (async () => {
+      try {
+        await fetchOrdersForUser(user.userId);
+      } catch (err: any) {
+        // Try to extract a helpful message from axios error response if present
+        const serverMessage =
+          err?.response?.data?.message ??
+          err?.response?.data?.error ??
+          (err?.response?.data ? JSON.stringify(err.response.data) : null);
+        setLookupError(serverMessage ?? err?.message ?? 'Failed to load orders.');
+      }
+    })();
+  }, [user, token, fetchOrdersForUser]);
 
   const handleLookup = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -121,22 +139,22 @@ const OrdersPage = () => {
         </p>
       ) : (
         <ul className="order-list">
-      {sortedOrders.map((order) => (
-        <li key={order.orderId} className="order-card">
-          <header>
-            <strong>Order #{order.orderId}</strong>
-            <span
-              className={`status-pill ${
-                order.status
-                  ? `status-${order.status
-                      .toLowerCase()
-                      .replace(/[^a-z0-9]+/g, '-')}`
-                  : 'status-unknown'
-              }`}
-            >
-              {order.status ?? 'Unknown'}
-            </span>
-          </header>
+          {sortedOrders.map((order) => (
+            <li key={order.orderId} className="order-card">
+              <header>
+                <strong>Order #{order.orderId}</strong>
+                <span
+                  className={`status-pill ${
+                    order.status
+                      ? `status-${order.status
+                          .toLowerCase()
+                          .replace(/[^a-z0-9]+/g, '-')}`
+                      : 'status-unknown'
+                  }`}
+                >
+                  {order.status ?? 'Unknown'}
+                </span>
+              </header>
               <dl>
                 <div>
                   <dt>Product ID</dt>
@@ -149,7 +167,7 @@ const OrdersPage = () => {
                 <div>
                   <dt>Total</dt>
                   <dd>
-                    {typeof order.totalAmount === 'number'
+                    {order.totalAmount !== undefined && order.totalAmount !== null
                       ? `$${order.totalAmount.toFixed(2)}`
                       : '—'}
                   </dd>

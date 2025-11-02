@@ -19,9 +19,9 @@ spring:
         retry:
           enabled: true
           max-attempts: 3
-          initial-interval: 2000ms
+          initial-interval: 1000ms
           multiplier: 2.0
-          max-interval: 5s
+          max-interval: 1s
 
     template:
       mandatory: true
@@ -30,7 +30,7 @@ spring:
         initial-interval: 1000ms
         max-attempts: 3
         multiplier: 2.0
-        max-interval: 10000ms
+        max-interval: 1s
 
   datasource:
     url: jdbc:postgresql://localhost:5433/storedb

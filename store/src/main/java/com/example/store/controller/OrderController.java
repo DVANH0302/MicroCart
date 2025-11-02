@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/orders")
 @Slf4j
@@ -23,6 +25,13 @@ public class OrderController {
     public OrderController(OrderService orderService, OrderOrchestrator orderOrchestrator) {
         this.orderService = orderService;
         this.orderOrchestrator = orderOrchestrator;
+    }
+
+    @GetMapping("/users/{userId}")
+    public ResponseEntity<List<OrderResponse>> getAllOrders(@PathVariable Integer userId) {
+        log.info("getAllOrders");
+        List<OrderResponse> orderResponses = orderService.getAllOrders(userId);
+        return ResponseEntity.ok(orderResponses);
     }
 
     @PostMapping

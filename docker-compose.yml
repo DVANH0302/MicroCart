@@ -215,6 +215,21 @@ services:
     networks:
       - store-network
 
+  # Frontend - build and serve the Vite app with nginx
+  store-frontend:
+    build:
+      context: ./comp5348-store
+      dockerfile: Dockerfile
+      args:
+        VITEAPIURL: "http://localhost:8082"
+    container_name: store-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - store-app
+    networks:
+      - store-network
+
 
 networks:
   store-network:

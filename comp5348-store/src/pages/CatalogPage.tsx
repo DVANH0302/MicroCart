@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import apiClient from '../api/client';
 import type { OrderRequest, OrderResponse, ProductStockResponse } from '../api/types';
@@ -12,7 +12,7 @@ const formatter = new Intl.NumberFormat('en-AU', {
 
 const CatalogPage = () => {
   const { user, token } = useAuth();
-  const { addOrder } = useOrders();
+  const { addOrder, requestRefund } = useOrders();
 
   const [products, setProducts] = useState<ProductStockResponse[]>([]);
   const [loadingStock, setLoadingStock] = useState(false);
@@ -20,6 +20,10 @@ const CatalogPage = () => {
   const [quantities, setQuantities] = useState<Record<number, number>>({});
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [lastCreatedOrderId, setLastCreatedOrderId] = useState<number | null>(null);
+  const [cancelCountdown, setCancelCountdown] = useState<number>(0);
+  const [isRefunding, setIsRefunding] = useState(false);
+  const cancelIntervalRef = useRef<number | null>(null);
 
   const productsWithStock = useMemo(
     () =>
@@ -93,27 +97,73 @@ const CatalogPage = () => {
       );
       addOrder(data);
       setQuantities((prev) => ({ ...prev, [product.productId]: 1 }));
-      setMessage(
-        `Order ${data.orderId} created successfully for ${quantity} x ${product.productName}.`,
-      );
+      // set success message and start cancellable window
+      setMessage(`Order ${data.orderId} created successfully for ${quantity} x ${product.productName}.`);
+      setLastCreatedOrderId(data.orderId);
+      setCancelCountdown(5);
+      // start countdown
+      if (cancelIntervalRef.current) {
+        window.clearInterval(cancelIntervalRef.current);
+      }
+      cancelIntervalRef.current = window.setInterval(() => {
+        setCancelCountdown((prev) => {
+          if (prev <= 1) {
+            // end countdown
+            if (cancelIntervalRef.current) {
+              window.clearInterval(cancelIntervalRef.current);
+              cancelIntervalRef.current = null;
+            }
+            setLastCreatedOrderId(null);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
       fetchAvailability();
     } catch (requestError: unknown) {
-      if (
-        requestError &&
-        typeof requestError === 'object' &&
-        'response' in requestError
-      ) {
-        const response = (requestError as any).response;
-        const messageFromServer =
-          response?.data?.message ??
-          response?.data ??
-          'Unable to place order right now.';
-        setError(String(messageFromServer));
-      } else {
-        setError('Unable to place order right now.');
-      }
+      // always show the fixed inline error message requested by the user
+      // and log the original error for debugging
+      // (this avoids rendering objects like [object Object] in the UI)
+      // eslint-disable-next-line no-console
+      console.error('placeOrder failed', requestError);
+      setError('error when creating order');
     } finally {
       setSubmittingProductId(null);
+    }
+  };
+
+  // cleanup interval on unmount
+  useEffect(() => {
+    return () => {
+      if (cancelIntervalRef.current) {
+        window.clearInterval(cancelIntervalRef.current);
+        cancelIntervalRef.current = null;
+      }
+    };
+  }, []);
+
+  const handleCancelClick = async () => {
+    if (!lastCreatedOrderId || isRefunding) return;
+    setIsRefunding(true);
+    try {
+      await requestRefund(lastCreatedOrderId);
+      // refund succeeded — clear cancellable state and show message
+      setMessage(`Order ${lastCreatedOrderId} refunded.`);
+      setLastCreatedOrderId(null);
+      setCancelCountdown(0);
+      if (cancelIntervalRef.current) {
+        window.clearInterval(cancelIntervalRef.current);
+        cancelIntervalRef.current = null;
+      }
+      // update stock view after refund (in case backend restocks)
+      fetchAvailability();
+    } catch (err) {
+      // keep UI simple: show error inline
+      // eslint-disable-next-line no-console
+      console.error('requestRefund failed', err);
+      setError('Unable to cancel order');
+    } finally {
+      setIsRefunding(false);
     }
   };
 
@@ -136,7 +186,22 @@ const CatalogPage = () => {
         </button>
       </header>
 
-      {message ? <div className="alert success">{message}</div> : null}
+      {message ? (
+        <div className="alert success">
+          {message}
+          {lastCreatedOrderId ? (
+            <button
+              type="button"
+              className="btn ghost"
+              onClick={handleCancelClick}
+              disabled={isRefunding}
+              style={{ marginLeft: 12 }}
+            >
+              {isRefunding ? 'Cancelling...' : `Cancel (${cancelCountdown})`}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
       {error ? <div className="alert error">{error}</div> : null}
 
       <div className="product-grid">
