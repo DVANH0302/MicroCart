@@ -229,7 +229,7 @@ public class OrderOrchestratorImpl implements OrderOrchestrator {
 
         try {
             log.info("Start processing refund request for order {}", orderId);
-
+            bankService.refund(orderId);
             log.info("Refund successful, updating order status");
             orderService.cancelOrder(order.getId());
 

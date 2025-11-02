@@ -2,7 +2,10 @@ package com.example.store.controller;
 
 
 import com.example.store.dto.request.DeliveryFailureAlert;
+import com.example.store.entity.DeliveryStatus;
+import com.example.store.service.BankService;
 import com.example.store.service.EmailService;
+import com.example.store.service.OrderService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,18 +18,23 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 public class DeliveryExternalController {
 
-    private final EmailService emailService;
 
-    public  DeliveryExternalController(EmailService emailService) {
-        this.emailService = emailService;
+    private final OrderService orderService;
+    private final BankService bankService;
+
+    public DeliveryExternalController(OrderService orderService, BankService bankService) {
+        this.orderService = orderService;
+        this.bankService = bankService;
     }
 
     @PostMapping("/alert")
     public ResponseEntity<Void> handleAlert(@RequestBody DeliveryFailureAlert deliveryFailureAlert) {
         try{
-            log.info("ALERT: DELIVERY sent system error when {} for order id: {} at {}", deliveryFailureAlert.getDeliveryStatus(),deliveryFailureAlert.getOrderId(), deliveryFailureAlert.getTimestamp());
-            log.info("ALERT: Sending alert to customer");
-            emailService.sendAlertFailedDeliveryEmail(deliveryFailureAlert.getOrderId());
+            log.info("ALERT: DELIVERY UPDATE SEND VIA RESTAPI SINCE MESSAGE BROKER IS ERROR FOR ORDER ID: {}", deliveryFailureAlert.getOrderId());
+            orderService.updateStatus(deliveryFailureAlert.getOrderId(), deliveryFailureAlert.getDeliveryStatus());
+            if (deliveryFailureAlert.getDeliveryStatus() == DeliveryStatus.LOST){
+                bankService.refund(deliveryFailureAlert.getOrderId());
+            }
             return  ResponseEntity.ok().build();
         }catch(Exception e){
             return ResponseEntity.badRequest().build();

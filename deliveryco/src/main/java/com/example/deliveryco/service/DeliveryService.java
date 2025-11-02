@@ -9,6 +9,7 @@ import com.example.deliveryco.entity.DeliveryStatus;
 import com.example.deliveryco.messaging.CustomCorrelationData;
 import com.example.deliveryco.repository.DeliveryRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -40,6 +41,9 @@ public class DeliveryService {
     @Value("${deliveryco.simulation.status-interval-ms:5000}")
     private long statusIntervalMs;
 
+    @Value("${deliveryco.simulation.lost-percentage:5}")
+    private long lostPercentage;
+
     private final RestTemplate restTemplate;
 
     private final RabbitTemplate rabbitTemplate;
@@ -68,7 +72,7 @@ public class DeliveryService {
         // saving the delivery in db
         Delivery delivery  = deliverySaveService.save(deliveryRequest);
 
-        log.info("Successfully saved deliveryRequest: {}", deliveryRequest);
+        log.info("Successfully saved deliveryRequest with LOST PERCENTAGE of {}: {}. ",lostPercentage , deliveryRequest);
         log.info("Delivery after being saved: {}", delivery);
 
         // simulation
@@ -86,7 +90,7 @@ public class DeliveryService {
 
             // DELIVERED OR LOST (5%)
             Thread.sleep(statusIntervalMs);
-            if (random.nextInt(100) < 5) {
+            if (random.nextInt(100) < lostPercentage) {
                 log.info("orderId {} is  LOST", orderId);
                 processUpdate(orderId, DeliveryStatus.LOST);
             } else{
@@ -109,29 +113,7 @@ public class DeliveryService {
                 RabbitMQConfig.getStatusMessage(deliveryStatus));
     }
 
-    public void sendUpdate(int orderId,  DeliveryStatus deliveryStatus, String message) {
-
-
-        CustomCorrelationData correlationData = CustomCorrelationData.builder()
-                .id("order-" + orderId + "-" + UUID.randomUUID().toString())
-                .orderId(orderId)
-                .build();
-        correlationData.getFuture().whenComplete((r, e) -> {
-            if (e != null) {
-                alertStoreSystemFailure(orderId, deliveryStatus);
-            } else if (r != null || r.isAck()) {
-                // for demo purpose of what happenning when ack
-//                log.info("Alert failure demo in ack");
-//                alertStoreSystemFailure(orderId, deliveryStatus);
-//                deliveryUpdateService.saveFailedStatus(orderId, deliveryStatus);
-                return;
-
-            } else{
-                //nack
-                alertStoreSystemFailure(orderId, deliveryStatus);
-                deliveryUpdateService.saveFailedStatus(orderId, deliveryStatus);
-            }
-        });
+    public void sendUpdate(int orderId, DeliveryStatus deliveryStatus, String message) {
 
         DeliveryUpdate deliveryUpdate = DeliveryUpdate.builder()
                 .orderId(orderId)
@@ -139,16 +121,44 @@ public class DeliveryService {
                 .timeStamp(LocalDateTime.now())
                 .message(message)
                 .build();
-        rabbitTemplate.convertAndSend(
-                RabbitMQConfig.STORE_EXCHANGE,
-                RabbitMQConfig.getStatusKey(deliveryStatus),
-                deliveryUpdate,
-                correlationData
-        );
+
+        try {
+            CustomCorrelationData correlationData = CustomCorrelationData.builder()
+                    .id("order-" + orderId + "-" + UUID.randomUUID().toString())
+                    .orderId(orderId)
+                    .build();
+
+            // Callback for ACK/NACK after successful send
+            correlationData.getFuture().whenComplete((r, e) -> {
+                if (e != null) {
+                    log.warn("Exception during message confirmation", e);
+                    updateStoreViaRestAPI(orderId, deliveryStatus);
+                } else if (r != null && r.isAck()) {
+                    log.info("Message successfully delivered to queue for order {}", orderId);
+                } else {
+                    log.warn("NACK received - falling back to REST API");
+                    updateStoreViaRestAPI(orderId, deliveryStatus);
+                }
+            });
+
+            // Attempt to send via RabbitMQ
+            rabbitTemplate.convertAndSend(
+                    RabbitMQConfig.STORE_EXCHANGE,
+                    RabbitMQConfig.getStatusKey(deliveryStatus),
+                    deliveryUpdate,
+                    correlationData
+            );
+
+            log.debug("Message sent to RabbitMQ for order {}", orderId);
+
+        } catch (AmqpException | IllegalStateException e) {
+            // RabbitMQ connection failed - use REST API as fallback
+            log.error("RabbitMQ unavailable for order {} - using REST API fallback", orderId, e);
+            updateStoreViaRestAPI(orderId, deliveryStatus);
+        }
     }
 
-
-    private void alertStoreSystemFailure(Integer orderId, DeliveryStatus deliveryStatus) {
+    private void updateStoreViaRestAPI(Integer orderId, DeliveryStatus deliveryStatus) {
         try{
             String alertUrl =  STORE_API_URL + ALERT_ENDPOINT;
 

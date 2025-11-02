@@ -110,7 +110,7 @@ public class DeliveryServiceImpl implements DeliveryService {
                 order.getId(),
                 user.getFirstName() + " " + user.getLastName(),
                 user.getEmail(),
-                "TODO: Add address to User entity",
+                "Sydney",
                 request.getQuantity(),
                 distinctWarehouseIds
         );
@@ -125,7 +125,7 @@ public class DeliveryServiceImpl implements DeliveryService {
 
                 String status = latestOrder.get().getStatus();
                 if (DeliveryStatus.CANCELLED.name().equals(status)) {
-                    log.info("Skipping delivery request for cancelled order {}", order.getId());
+                    log.info("DELIVERY REQUEST CANCELLED FOR ORDER {} BEFORE SNEDING DELIVERY", order.getId());
                     return;
                 }
 
