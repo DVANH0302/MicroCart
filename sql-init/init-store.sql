@@ -63,3 +63,23 @@
 
     CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
     CREATE INDEX IF NOT EXISTS idx_orders_status  ON orders(status);
+
+
+    -- ====================
+    -- ORDER SAGA TABLE
+    -- ====================
+    CREATE TABLE IF NOT EXISTS order_saga_state (
+        id BIGSERIAL PRIMARY KEY,
+        order_id INT UNIQUE REFERENCES orders(order_id) ON DELETE CASCADE,
+        status VARCHAR(50) NOT NULL,
+        current_step VARCHAR(100) NOT NULL,
+        product_id INT NOT NULL,
+        quantity INT NOT NULL,
+        bank_transaction_id VARCHAR(100),
+        error_message TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+    CREATE INDEX IF NOT EXISTS idx_saga_order_id ON order_saga_state(order_id);
+    CREATE INDEX IF NOT EXISTS idx_saga_status ON order_saga_state(status);

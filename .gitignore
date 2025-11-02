@@ -57,3 +57,4 @@ __pycache__/
 *.bak
 *.swp
 Thumbs.db
+/store/src/test/java/com/example/store/dto/request/

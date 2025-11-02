@@ -1,0 +1,15 @@
+package com.example.store.entity;
+
+public enum SagaStatus {
+    STARTED,
+    USER_VALIDATED,
+    INVENTORY_AVAILABLE,
+    INVENTORY_RESERVED,
+    ORDER_CREATED,
+    PAYMENT_COMPLETED,
+    DELIVERY_REQUESTED,
+    COMPLETED,
+    COMPENSATING,
+    COMPENSATED,
+    FAILED
+}

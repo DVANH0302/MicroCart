@@ -30,7 +30,6 @@ public class DeliveryConsumer {
 //            if (true){
 //                throw new RuntimeException("TEST FOR DLQ");
 //            }
-            log.info("TODO: SEND EMAIL");
             deliveryService.handleUpdate(deliveryUpdate);
             emailService.sendStatusEmail(deliveryUpdate.getOrderId(), deliveryUpdate.getStatus());
 
