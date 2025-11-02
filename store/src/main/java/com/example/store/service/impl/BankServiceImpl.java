@@ -28,8 +28,8 @@ public class BankServiceImpl implements BankService {
 
     @Override
     public BankPaymentResponse processPayment(User user, Order order, OrderRequest request) {
-//        String bankUrl = "http://bank-app:8083/api/bank/payment";
-        String bankUrl = "http://localhost:8083/api/bank/payment";
+        String bankUrl = "http://bank-app:8083/api/bank/payment";
+//        String bankUrl = "http://localhost:8083/api/bank/payment";
         BankPaymentRequest paymentRequest = BankPaymentRequest.builder()
                 .orderId(order.getId())
                 .fromAccount(user.getBankAccountId())
@@ -51,8 +51,8 @@ public class BankServiceImpl implements BankService {
     public BankRefundResponse refund(Integer orderId) {
         Order order = orderService.findByIdWithUser(orderId)
                 .orElseThrow(() -> new OrderException("Order not found"));
-//        String bankUrl = "http://bank-app:8083/api/bank/refund";
-        String bankUrl = "http://localhost:8083/api/bank/refund";
+        String bankUrl = "http://bank-app:8083/api/bank/refund";
+//        String bankUrl = "http://localhost:8083/api/bank/refund";
         BankRefundRequest refundRequest = BankRefundRequest.builder()
                 .orderId(order.getId())
                 .originalTransactionId(order.getBankTransactionId())
