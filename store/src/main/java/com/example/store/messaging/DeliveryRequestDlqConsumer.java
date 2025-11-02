@@ -17,7 +17,7 @@ public class DeliveryRequestDlqConsumer {
     @RabbitListener(queues = RabbitMQConfig.DELIVERY_REQUEST_DLQ)
     public void handleDeliveryRequestDlq(DeliveryRequest deliveryRequest) {
         try{
-            log.info("TODO: ALERT THE USER FOR FAILED DELIVERY REQUEST {}",  deliveryRequest);
+            log.error("ALERT: DELIVERY REEQUEST FAILED FOR ORDER ID: " + deliveryRequest.getOrderId());
             emailService.sendAlertFailedDeliveryEmail(deliveryRequest.getOrderId());
         } catch (RuntimeException e) {
             throw new RuntimeException(e);

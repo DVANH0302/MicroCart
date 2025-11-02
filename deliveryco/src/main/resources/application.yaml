@@ -15,7 +15,7 @@ spring:
       simple:
         acknowledge-mode: auto
         default-requeue-rejected: false
-        prefetch: 5
+        prefetch: 20
         retry:
           enabled: true
           max-attempts: 3
@@ -61,3 +61,9 @@ store:
 
   alert:
     endpoint: /api/delivery/alert
+
+deliveryco:
+  simulation:
+    pickup-delay-ms: 15000
+    status-interval-ms: 5000
+    lost-percentage: 5

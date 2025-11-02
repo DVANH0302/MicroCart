@@ -7,6 +7,7 @@ import com.example.store.entity.Order;
 import com.example.store.entity.User;
 import com.example.store.exception.OrderException;
 import com.example.store.repository.OrderRepository;
+import com.example.store.service.BankService;
 import com.example.store.service.OrderService;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
@@ -84,6 +85,8 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new OrderException("Order not found"));
         order.setStatus(status.name());
         orderRepository.save(order);
+
+
     }
 
 

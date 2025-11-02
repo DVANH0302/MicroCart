@@ -115,6 +115,11 @@ services:
       SPRING_DATASOURCE_PASSWORD: deliverypass
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SERVER_PORT: 8080
+
+      #simulation
+      DELIVERYCO_SIMULATION_PICKUP_DELAY_MS: 15000
+      DELIVERYCO_SIMULATION_STATUS_INTERVAL_MS: 5000
+      DELIVERYCO_SIMULATION_LOST_PERCENTAGE: 30
     depends_on:
       deliveryco-db:
         condition: service_healthy
