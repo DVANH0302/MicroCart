@@ -219,34 +219,25 @@ public class SampleDataLoader implements CommandLineRunner {
         log.info("Stock updated: Warehouse 2, Product 1002: 60 units");
 
         // Create test user with a deterministic password
-        String defaultPassword = passwordEncoder.encode("password123");
+        String defaultPassword = passwordEncoder.encode("COMP5348");
         try {
             jdbc.update("""
                 INSERT INTO users(username, password_hash, email, first_name, last_name, bank_account_id)
-                VALUES (?, ?, 'andy@gmail.com', 'Andy', 'Doan', 'CUST_001')
+                VALUES (?, ?, 'customer@gmail.com', 'Customer', 'Demo', 'CUST_001')
                 ON CONFLICT (username) DO UPDATE
                 SET password_hash = EXCLUDED.password_hash,
                     email = EXCLUDED.email,
                     first_name = EXCLUDED.first_name,
                     last_name = EXCLUDED.last_name,
                     bank_account_id = EXCLUDED.bank_account_id
-            """, "andy", defaultPassword);
+            """, "customer", defaultPassword);
 
             Integer userId = jdbc.queryForObject(
-                "SELECT user_id FROM users WHERE username = 'andy'",
+                "SELECT user_id FROM users WHERE username = 'customer'",
                 Integer.class
             );
             log.info("Test user created/updated with ID: {}", userId);
 
-        // insert one order
-            // Create test order for the user
-            log.info("Creating test order...");
-            jdbc.update("""
-                INSERT INTO orders(user_id, product_id, quantity, total_amount, status, bank_transaction_id, warehouse_ids)
-                VALUES (?, 1001, 10, 1000.00, 'PENDING', 'seed-txn-001', '1,2')
-            """, userId);
-            log.info("Test order created for user_id: {}", userId);
-            log.info("Seed data creation completed successfully");
         } catch (Exception e) {
             log.error("Error creating seed data: {}", e.getMessage());
             throw e;

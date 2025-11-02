@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -67,6 +68,14 @@ public class OrderServiceImpl implements OrderService {
         return mapToOrderResponse(order);
     }
 
+    @Override
+    public List<OrderResponse> getAllOrders(Integer userId) {
+        List<Order> orders = findByUserId(userId).orElseGet(ArrayList::new);
+        return orders.stream()
+                .map(this::mapToOrderResponse)
+                .collect(Collectors.toList());
+    }
+
 
     @Transactional
     @Override
@@ -88,7 +97,10 @@ public class OrderServiceImpl implements OrderService {
         return orderRepository.findById(orderId);
     }
 
-
+    @Override
+    public Optional<List<Order>> findByUserId(Integer userId) {
+        return orderRepository.findByUserId(userId);
+    }
 
 
     private OrderResponse mapToOrderResponse(Order order) {
