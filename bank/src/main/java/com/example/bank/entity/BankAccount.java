@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
  * Bank Account entity
  */
 @Entity
-@Table(name = "bank_accounts")
+@Table(name = "bank_accounts", schema = "bank")
 @Data
 @Builder
 @NoArgsConstructor

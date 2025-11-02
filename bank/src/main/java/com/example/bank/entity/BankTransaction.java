@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
  * Bank Transaction entity
  */
 @Entity
-@Table(name = "bank_transactions", indexes = {
+@Table(name = "bank_transactions", schema = "bank", indexes = {
     @Index(name = "idx_bank_transactions_order_id", columnList = "order_id"),
     @Index(name = "idx_bank_transactions_status", columnList = "status"),
     @Index(name = "idx_bank_transactions_from_account", columnList = "from_account"),
