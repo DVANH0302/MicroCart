@@ -71,7 +71,7 @@ const LoginPage = () => {
             value={username}
             autoComplete="username"
             onChange={(event) => setUsername(event.currentTarget.value)}
-            placeholder="andy"
+            placeholder="customer"
           />
         </label>
         <label className="form-field">
@@ -81,7 +81,7 @@ const LoginPage = () => {
             value={password}
             autoComplete="current-password"
             onChange={(event) => setPassword(event.currentTarget.value)}
-            placeholder="password123"
+            placeholder="COMP5348"
           />
         </label>
         <button type="submit" className="btn primary" disabled={loading}>
@@ -89,8 +89,8 @@ const LoginPage = () => {
         </button>
       </form>
       <p className="muted">
-        Tip: the seed data ships with the user <code>andy</code> /
-        <code>password123</code>.
+        Tip: the seed data ships with the user <code>customer</code>/
+        <code>COMP5348</code>.
       </p>
     </section>
   );
