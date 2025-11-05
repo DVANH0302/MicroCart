@@ -98,8 +98,6 @@ These mechanisms ensure **resiliency, idempotency, and eventual consistency** ev
 
 ---
 
-If you want, I can also **add a tiny emoji-style flow diagram** for this section to visually show **failure → compensation → recovery**, which matches your README style with the other diagrams. Do you want me to do that?
-
 
 ## Quality Attributes
 
