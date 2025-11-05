@@ -73,7 +73,7 @@ This enables **idempotency** and **resumable orchestration** even under partial 
 ---
 
 
-## ⚙️ Quality Attributes
+## Quality Attributes
 
 | Attribute         | Implementation                                                 | Impact                                          |
 | ----------------- | -------------------------------------------------------------- | ----------------------------------------------- |
