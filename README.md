@@ -1,5 +1,6 @@
-# MicroCarts 
+# _MicroCarts_ - _Microservice Ecommerce System_
 
+---
 
 ## Overview
 This project implements an **enterprise-scale online store** using a **microservices architecture**, designed for **scalability**, **fault tolerance**, and **maintainability**.  
@@ -45,6 +46,9 @@ All services are containerized and run in a shared Docker network, allowing clea
 In distributed systems, achieving **ACID** consistency across services is challenging.
 Our design uses the **Saga pattern** to maintain **eventual consistency** across multiple services during the order lifecycle.
 
+![img.png](docs/diagrams/saga.png)
+
+
 ### Saga Execution Flow
 
 1. **Validate User** – Check if the customer is authenticated and authorized.
@@ -64,7 +68,6 @@ If any step fails, the Saga orchestrator performs **compensating transactions** 
 Saga state transitions are persisted to ensure recovery after a crash or restart.
 This enables **idempotency** and **resumable orchestration** even under partial failures.
 
-![img.png](docs/diagrams/saga.png)
 
 
 ---
