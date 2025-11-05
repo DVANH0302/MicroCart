@@ -40,9 +40,6 @@ All services communicate asynchronously using **RabbitMQ**, and persist data ind
 All services are containerized and run in a shared Docker network, allowing clean separation of responsibilities.
 
 ---
-Got it! You can add a **Database Design / ERD section** to your README to show how each service stores data and how the schema supports the Saga orchestration. Here's a concise way to include it:
-
----
 
 ## Database Design
 
