@@ -73,6 +73,33 @@ This enables **idempotency** and **resumable orchestration** even under partial 
 ---
 
 
+## System Failure Scenarios
+
+The system is designed to **handle partial failures gracefully** using the Saga pattern, compensations, and asynchronous messaging:
+
+1. **Bank Service Down**
+* Saga is triggered to release stock.
+
+![img.png](docs/diagrams/bankdown.png)
+   
+2. **RabbitMQ Down**
+
+    1. **Store cannot send delivery requests** → Saga may trigger compensation (cancel order, release inventory, refund payment).
+   ![img.png](docs/diagrams/rabbitdown.png)
+    2. **DeliveryCo cannot update Store via message queue** → fallback via an **alert webhook** (direct HTTP callback) ensures delivery status is eventually updated.
+![img.png](docs/diagrams/rabbitdown2.png)
+3. **DeliveryCo Service Down**
+
+    * Delivery requests remain in RabbitMQ until the service recovers.
+    * When RabbitMq is up again, it will try to send data again.
+![img.png](docs/diagrams/deliverydown.png)
+These mechanisms ensure **resiliency, idempotency, and eventual consistency** even when one or more services are unavailable.
+
+---
+
+If you want, I can also **add a tiny emoji-style flow diagram** for this section to visually show **failure → compensation → recovery**, which matches your README style with the other diagrams. Do you want me to do that?
+
+
 ## ⚙️ Quality Attributes
 
 | Attribute         | Implementation                                                 | Impact                                          |
@@ -122,4 +149,3 @@ Once running, you can:
 ![img.png](docs/diagrams/email-log.png)
 ![img.png](docs/diagrams/deliverylog.png)
 ---
-
