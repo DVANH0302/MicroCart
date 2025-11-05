@@ -93,6 +93,7 @@ The system is designed to **handle partial failures gracefully** using the Saga 
     * Delivery requests remain in RabbitMQ until the service recovers.
     * When RabbitMq is up again, it will try to send data again.
 ![img.png](docs/diagrams/deliverydown.png)
+
 These mechanisms ensure **resiliency, idempotency, and eventual consistency** even when one or more services are unavailable.
 
 ---
