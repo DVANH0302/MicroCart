@@ -1,4 +1,4 @@
-# _MicroCarts_ - _Microservice Ecommerce System_
+# _MicroCart_ - _Microservice Ecommerce System_
 
 ---
 
