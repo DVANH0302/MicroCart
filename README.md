@@ -40,6 +40,32 @@ All services communicate asynchronously using **RabbitMQ**, and persist data ind
 All services are containerized and run in a shared Docker network, allowing clean separation of responsibilities.
 
 ---
+Got it! You can add a **Database Design / ERD section** to your README to show how each service stores data and how the schema supports the Saga orchestration. Here's a concise way to include it:
+
+---
+
+## Database Design
+
+Each microservice has its own **PostgreSQL database** to maintain **data isolation** and **service autonomy**.
+
+| Service                | Database Purpose                                                                  |
+| ---------------------- | --------------------------------------------------------------------------------- |
+| **Store Service**      | Customers, Products, Orders, Inventory, OrderSagaState for workflow orchestration |
+| **Bank Service**       | Payment transactions, refunds, transaction logs                                   |
+| **DeliveryCo Service** | Delivery requests, delivery status                                                |
+| **Email Service**      | Email queue/logs (for notifications)                                              |
+
+**Key Design Points:**
+
+* **Saga State Table:** `OrderSagaState` in Store service keeps track of each order’s workflow step and status. This allows **resuming operations** after a crash or partial failure.
+* **Isolated Databases:** Each service has its own DB to prevent cascading failures and support **independent scaling**.
+
+![db.png](docs/diagrams/db.png)
+
+> This design ensures **data consistency within services** while relying on **Saga pattern** for **cross-service consistency**.
+
+---
+
 
 ## Saga Pattern for Distributed Transactions
 
