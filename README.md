@@ -119,11 +119,10 @@ Once running, you can:
 
 ![img.png](docs/diagrams/place-order.png)
 
-3. Check order status
-
+**3. Check order status**
 ![img.png](docs/diagrams/orderstatus.png)
 
-**3. Check logs from Email and Delivery services for simulated updates.**
+**4. Check logs from Email and Delivery services for simulated updates.**
 
 ![img.png](docs/diagrams/email-log.png)
 ![img.png](docs/diagrams/deliverylog.png)
