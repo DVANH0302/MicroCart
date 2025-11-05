@@ -112,13 +112,19 @@ Access:
 
 Once running, you can:
 
-1. Register and log in from the frontend. **(username: customer, password: COMP5348)**
+**1. Register and log in from the frontend. **(username: customer, password: COMP5348)****
+
 ![img.png](docs/diagrams/login.png)
-2. Place an order → triggers the full Saga orchestration.
+**2. Place an order → triggers the full Saga orchestration.**
+
 ![img.png](docs/diagrams/place-order.png)
+
 3. Check order status
+
 ![img.png](docs/diagrams/orderstatus.png)
-3. Check logs from Email and Delivery services for simulated updates.
+
+**3. Check logs from Email and Delivery services for simulated updates.**
+
 ![img.png](docs/diagrams/email-log.png)
 ![img.png](docs/diagrams/deliverylog.png)
 ---
